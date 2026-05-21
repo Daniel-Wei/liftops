@@ -1,0 +1,21 @@
+services:
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+# Phase 4 will add the Azure Functions API service after the .NET 8
+# Functions project exists in ./api.
+#
+#  api:
+#    build:
+#      context: ./api
+#      dockerfile: Dockerfile
+#    ports:
+#      - "7071:80"
+#    environment:
+#      AzureWebJobsStorage: "UseDevelopmentStorage=true"
+#      FUNCTIONS_WORKER_RUNTIME: "dotnet-isolated"
