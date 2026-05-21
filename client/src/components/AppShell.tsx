@@ -1,125 +1,96 @@
-/*
-LiftOps React line annotations / LiftOps React 每行注释
-File: client/src/components/AppShell.tsx
-EN: This block explains each non-empty source line below without changing runtime behavior.
-中文：本注释块解释下方每个非空源码行，不改变运行行为。
-
-Line 1:
-EN: Imports TypeScript-only types used by this React file. Code: import type { ReactNode } from "react";
-中文：导入本 React 文件使用的 TypeScript 类型，不进入运行时代码。 代码：import type { ReactNode } from "react";
-Line 2:
-EN: Imports a runtime dependency used by this React file. Code: import { Sidebar, type NavItem } from "./Sidebar";
-中文：导入本 React 文件运行时需要的依赖。 代码：import { Sidebar, type NavItem } from "./Sidebar";
-Line 3:
-EN: Imports a runtime dependency used by this React file. Code: import { TopBar } from "./TopBar";
-中文：导入本 React 文件运行时需要的依赖。 代码：import { TopBar } from "./TopBar";
-Line 5:
-EN: Declares a local TypeScript type so component props stay explicit. Code: type AppShellProps<PageKey extends string = string> = {
-中文：声明本文件内部使用的 TypeScript 类型，让组件 props 更明确。 代码：type AppShellProps<PageKey extends string = string> = {
-Line 6:
-EN: Defines one field on a TypeScript object shape. Code: navItems: NavItem<PageKey>[];
-中文：定义 TypeScript 对象结构中的一个字段。 代码：navItems: NavItem<PageKey>[];
-Line 7:
-EN: Defines one field on a TypeScript object shape. Code: currentPage: PageKey;
-中文：定义 TypeScript 对象结构中的一个字段。 代码：currentPage: PageKey;
-Line 8:
-EN: Defines one field on a TypeScript object shape. Code: onNavigate: (page: PageKey) => void;
-中文：定义 TypeScript 对象结构中的一个字段。 代码：onNavigate: (page: PageKey) => void;
-Line 9:
-EN: Defines one field on a TypeScript object shape. Code: children: ReactNode;
-中文：定义 TypeScript 对象结构中的一个字段。 代码：children: ReactNode;
-Line 10:
-EN: Defines one field on a TypeScript object shape. Code: immersive?: boolean;
-中文：定义 TypeScript 对象结构中的一个字段。 代码：immersive?: boolean;
-Line 11:
-EN: Closes the current TypeScript block or object. Code: };
-中文：关闭当前 TypeScript 代码块或对象。 代码：};
-Line 13:
-EN: Exports a reusable React component or page component. Code: export function AppShell<PageKey extends string>({
-中文：导出可复用 React 组件或页面组件。 代码：export function AppShell<PageKey extends string>({
-Line 14:
-EN: Keeps this React and TypeScript line in place for the current UI behavior. Code: navItems,
-中文：保留当前 UI 行所需的 React 与 TypeScript 逻辑。 代码：navItems,
-Line 15:
-EN: Keeps this React and TypeScript line in place for the current UI behavior. Code: currentPage,
-中文：保留当前 UI 行所需的 React 与 TypeScript 逻辑。 代码：currentPage,
-Line 16:
-EN: Keeps this React and TypeScript line in place for the current UI behavior. Code: onNavigate,
-中文：保留当前 UI 行所需的 React 与 TypeScript 逻辑。 代码：onNavigate,
-Line 17:
-EN: Keeps this React and TypeScript line in place for the current UI behavior. Code: children,
-中文：保留当前 UI 行所需的 React 与 TypeScript 逻辑。 代码：children,
-Line 18:
-EN: Keeps this React and TypeScript line in place for the current UI behavior. Code: immersive = false,
-中文：保留当前 UI 行所需的 React 与 TypeScript 逻辑。 代码：immersive = false,
-Line 19:
-EN: Keeps this React and TypeScript line in place for the current UI behavior. Code: }: AppShellProps<PageKey>) {
-中文：保留当前 UI 行所需的 React 与 TypeScript 逻辑。 代码：}: AppShellProps<PageKey>) {
-Line 20:
-EN: Branches the render path based on component state or props. Code: if (immersive) {
-中文：根据组件状态或 props 切换渲染路径。 代码：if (immersive) {
-Line 21:
-EN: Returns a compact JSX element directly. Code: return <div className="min-h-screen bg-[#070b12]">{children}</div>;
-中文：直接返回一个紧凑的 JSX 元素。 代码：return <div className="min-h-screen bg-[#070b12]">{children}</div>;
-Line 22:
-EN: Closes the current TypeScript block or object. Code: }
-中文：关闭当前 TypeScript 代码块或对象。 代码：}
-Line 24:
-EN: Starts the JSX tree returned by this component or callback. Code: return (
-中文：开始返回组件或回调函数的 JSX 结构。 代码：return (
-Line 25:
-EN: Opens a JSX element or component in the UI layout. Code: <div className="min-h-screen bg-[#f4f6f8] text-slate-950">
-中文：打开 UI 布局中的 JSX 元素或组件。 代码：<div className="min-h-screen bg-[#f4f6f8] text-slate-950">
-Line 26:
-EN: Renders a self-closing JSX component or element. Code: <Sidebar navItems={navItems} currentPage={currentPage} onNavigate={onNavigate} />
-中文：渲染一个自闭合 JSX 组件或元素。 代码：<Sidebar navItems={navItems} currentPage={currentPage} onNavigate={onNavigate} />
-Line 27:
-EN: Renders a self-closing JSX component or element. Code: <TopBar navItems={navItems} currentPage={currentPage} onNavigate={onNavigate} />
-中文：渲染一个自闭合 JSX 组件或元素。 代码：<TopBar navItems={navItems} currentPage={currentPage} onNavigate={onNavigate} />
-Line 28:
-EN: Opens a JSX element or component in the UI layout. Code: <main className="px-4 pb-28 pt-5 lg:ml-72 lg:px-7 lg:pb-10">{children}</main>
-中文：打开 UI 布局中的 JSX 元素或组件。 代码：<main className="px-4 pb-28 pt-5 lg:ml-72 lg:px-7 lg:pb-10">{children}</main>
-Line 29:
-EN: Closes a JSX element opened earlier in the layout. Code: </div>
-中文：关闭前面打开的 JSX 元素。 代码：</div>
-Line 30:
-EN: Closes the returned JSX expression. Code: );
-中文：关闭返回的 JSX 表达式。 代码：);
-Line 31:
-EN: Closes the current TypeScript block or object. Code: }
-中文：关闭当前 TypeScript 代码块或对象。 代码：}
-
-End LiftOps React line annotations / 结束 LiftOps React 每行注释
-*/
-
 import type { ReactNode } from "react";
-import { Sidebar, type NavItem } from "./Sidebar";
-import { TopBar } from "./TopBar";
+import type { NavItem, PageKey } from "../types/appTypes";
 
-type AppShellProps<PageKey extends string = string> = {
-  navItems: NavItem<PageKey>[];
+type AppShellProps = {
+  navItems: NavItem[];
   currentPage: PageKey;
   onNavigate: (page: PageKey) => void;
   children: ReactNode;
-  immersive?: boolean;
 };
 
-export function AppShell<PageKey extends string>({
-  navItems,
-  currentPage,
-  onNavigate,
-  children,
-  immersive = false,
-}: AppShellProps<PageKey>) {
-  if (immersive) {
-    return <div className="min-h-screen bg-[#070b12]">{children}</div>;
+export function AppShell({ navItems, currentPage, onNavigate, children }: AppShellProps) {
+  if (currentPage === "landing") {
+    return <>{children}</>;
   }
 
+  const appNavItems = navItems.filter((item) => item.key !== "landing");
+  const activeItem = navItems.find((item) => item.key === currentPage);
+
   return (
-    <div className="min-h-screen bg-[#f4f6f8] text-slate-950">
-      <Sidebar navItems={navItems} currentPage={currentPage} onNavigate={onNavigate} />
-      <TopBar navItems={navItems} currentPage={currentPage} onNavigate={onNavigate} />
-      <main className="px-4 pb-28 pt-5 lg:ml-72 lg:px-7 lg:pb-10">{children}</main>
+    <div className="min-h-screen bg-slate-100 text-slate-950">
+      <aside className="fixed inset-y-0 left-0 hidden w-72 border-r border-slate-800 bg-slate-950 p-5 text-white lg:block">
+        <button
+          type="button"
+          onClick={() => onNavigate("landing")}
+          className="w-full rounded-2xl border border-white/10 bg-white/5 p-4 text-left"
+        >
+          <p className="text-2xl font-black">LiftOps</p>
+          <p className="mt-1 text-xs text-slate-400">Training operations dashboard</p>
+        </button>
+
+        <nav className="mt-6 space-y-1">
+          {appNavItems.map((item) => {
+            const isActive = item.key === currentPage;
+
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => onNavigate(item.key)}
+                className={`w-full rounded-xl px-3 py-3 text-left text-sm font-bold transition ${
+                  isActive ? "bg-white text-slate-950" : "text-slate-400 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                <span className="block">{item.label}</span>
+                <span className="text-xs opacity-70">{item.labelZh}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="mt-8 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm text-emerald-100">
+          <p className="font-black">Phase 1</p>
+          <p className="mt-1 text-emerald-100/80">Static UI with mock data only.</p>
+        </div>
+      </aside>
+
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur lg:ml-72 lg:px-8">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">LiftOps</p>
+            <h1 className="text-lg font-black text-slate-950">{activeItem?.label}</h1>
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigate("landing")}
+            className="rounded-full bg-slate-950 px-4 py-2 text-xs font-black text-white"
+          >
+            Home
+          </button>
+        </div>
+      </header>
+
+      <main className="px-4 pb-28 pt-5 lg:ml-72 lg:px-8 lg:pb-10">{children}</main>
+
+      <nav className="fixed inset-x-3 bottom-3 z-30 flex gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-2xl lg:hidden">
+        {appNavItems.map((item) => {
+          const isActive = item.key === currentPage;
+
+          return (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => onNavigate(item.key)}
+              className={`min-w-24 rounded-xl px-3 py-2 text-xs font-black ${
+                isActive ? "bg-slate-950 text-white" : "bg-slate-100 text-slate-600"
+              }`}
+            >
+              <span className="block">{item.label}</span>
+              <span className="text-[10px] opacity-70">{item.labelZh}</span>
+            </button>
+          );
+        })}
+      </nav>
     </div>
   );
 }
