@@ -9,14 +9,12 @@ type EvidenceNoteProps = {
 
 export function EvidenceNote({ title, evidenceType, children }: EvidenceNoteProps) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-slate-950 px-2.5 py-1 text-xs font-black uppercase text-white">
-          {evidenceType}
-        </span>
-        <p className="text-sm font-black text-slate-950">{title}</p>
+    <div className="evidence-note">
+      <div className="evidence-note-header">
+        <span className="evidence-label">{evidenceType}</span>
+        <p className="evidence-title">{title}</p>
       </div>
-      <div className="mt-3 text-sm leading-6 text-slate-600">{children}</div>
+      <div className="evidence-body">{children}</div>
     </div>
   );
 }

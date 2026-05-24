@@ -6,23 +6,19 @@ type StatusBadgeProps = {
 };
 
 export function StatusBadge({ status, label }: StatusBadgeProps) {
-  let classes = "border-slate-200 bg-slate-50 text-slate-700";
+  let className = "status-badge status-badge--neutral";
 
   if (status === "good") {
-    classes = "border-emerald-200 bg-emerald-50 text-emerald-700";
+    className = "status-badge status-badge--good";
   }
 
   if (status === "watch") {
-    classes = "border-amber-200 bg-amber-50 text-amber-700";
+    className = "status-badge status-badge--watch";
   }
 
   if (status === "risk") {
-    classes = "border-rose-200 bg-rose-50 text-rose-700";
+    className = "status-badge status-badge--risk";
   }
 
-  return (
-    <span className={`inline-flex w-fit rounded-full border px-2.5 py-1 text-xs font-black ${classes}`}>
-      {label ?? status}
-    </span>
-  );
+  return <span className={className}>{label ?? status}</span>;
 }
