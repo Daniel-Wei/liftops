@@ -45,29 +45,27 @@ export function LandingPage({ selectedLevel, onSelectLevel }: LandingPageProps) 
         </div>
 
         <div className="product-preview-shell">
-          <div className="product-preview">
-            <div className="preview-header">
-              <div>
-                <p className="preview-eyebrow">Today view</p>
-                <h2 className="preview-title">{previewData.userCase.name}</h2>
+          <div className="preview-header">
+            <div>
+              <p className="preview-eyebrow">Today view</p>
+              <h2 className="preview-title">{previewData.userCase.name}</h2>
+            </div>
+            <span className="status-badge status-badge--watch">{previewData.trainingBlock.trainingMode}</span>
+          </div>
+
+          <div className="preview-grid">
+            {previewMetrics.map((metric) => (
+              <div key={metric.label} className="preview-metric">
+                <p className="preview-eyebrow">{metric.label}</p>
+                <p className="preview-value">{metric.value}</p>
               </div>
-              <span className="status-badge status-badge--watch">{previewData.trainingBlock.trainingMode}</span>
-            </div>
+            ))}
+          </div>
 
-            <div className="preview-grid">
-              {previewMetrics.map((metric) => (
-                <div key={metric.label} className="preview-metric">
-                  <p className="preview-eyebrow">{metric.label}</p>
-                  <p className="preview-value">{metric.value}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="preview-risk">
-              <p className="preview-eyebrow">Plain-language output</p>
-              <p className="preview-risk-title">{previewData.riskWatches[0]?.title}</p>
-              <p className="preview-risk-copy">{previewData.riskWatches[0]?.recommendation}</p>
-            </div>
+          <div className="preview-risk">
+            <p className="preview-eyebrow">Plain-language output</p>
+            <p className="preview-risk-title">{previewData.riskWatches[0]?.title}</p>
+            <p className="preview-risk-copy">{previewData.riskWatches[0]?.recommendation}</p>
           </div>
         </div>
       </section>
