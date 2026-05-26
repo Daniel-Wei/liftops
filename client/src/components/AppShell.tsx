@@ -25,8 +25,8 @@ export function AppShell({ navItems, currentPage, onNavigate, children }: AppShe
           onClick={() => onNavigate("landing")}
           className="brand-card"
         >
-          <p className="brand-title">LiftOps</p>
-          <p className="brand-subtitle">Training science log</p>
+          <p className="brand-title">Lift Battery</p>
+          <p className="brand-subtitle">Training readiness battery</p>
         </button>
 
         <nav className="side-nav">
@@ -56,7 +56,7 @@ export function AppShell({ navItems, currentPage, onNavigate, children }: AppShe
       <header className="app-topbar">
         <div className="topbar-inner">
           <div>
-            <p className="topbar-eyebrow">LiftOps</p>
+            <p className="topbar-eyebrow">Lift Battery</p>
             <h1 className="topbar-title">{activeItem?.label}</h1>
           </div>
           <button

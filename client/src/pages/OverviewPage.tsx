@@ -67,8 +67,8 @@ export function OverviewPage({ selectedLevel }: OverviewPageProps) {
       </div>
 
       <EvidenceNote title="Boundary / 边界" evidenceType="proxy">
-        <p>LiftOps shows interpretable training signals. It does not diagnose recovery, overtraining, or medical risk.</p>
-        <p>LiftOps 展示可解释训练信号，不诊断恢复、过度训练或医学风险。</p>
+        <p>Lift Battery shows interpretable training signals. It does not diagnose recovery, overtraining, or medical risk.</p>
+        <p>Lift Battery 展示可解释训练信号，不诊断恢复、过度训练或医学风险。</p>
       </EvidenceNote>
     </div>
   );

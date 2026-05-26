@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppShell } from "./components/AppShell";
 import { FormulaNote } from "./components/FormulaNote";
 import { formulaNotes, navItems } from "./data/mockData";
@@ -17,6 +17,10 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState<PageKey>("landing");
   const [selectedLevel, setSelectedLevel] = useState<UserLevel>("level1");
   const currentFormula = formulaNotes.find((note) => note.pageKey === currentPage);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [currentPage]);
 
   function renderPage() {
     switch (currentPage) {

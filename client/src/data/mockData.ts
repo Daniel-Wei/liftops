@@ -828,8 +828,8 @@ export function getLevelData(selectedLevel: UserLevel) {
 export const formulaNotes: FormulaNoteData[] = [
   {
     pageKey: "landing",
-    title: "LiftOps starts from training records, not business formulas.",
-    titleZh: "LiftOps 从训练记录出发，不从商业公式出发。",
+    title: "Lift Battery starts from training records, not business formulas.",
+    titleZh: "Lift Battery 从训练记录出发，不从商业公式出发。",
     formula: "Training state = load + effort + volume + recovery + nutrition context",
     formulaZh: "训练状态 = 负荷 + 努力程度 + 训练量 + 恢复 + 饮食语境",
     concept: "The product language stays simple, but the tabs are grounded in training monitoring concepts.",

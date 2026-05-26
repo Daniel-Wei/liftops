@@ -46,8 +46,8 @@ export function SettingsPage({ selectedLevel }: SettingsPageProps) {
       </SectionCard>
 
       <EvidenceNote title="Evidence disclaimer / 证据说明" evidenceType="watch">
-        <p>LiftOps is not a medical app, diagnosis tool, or coach replacement.</p>
-        <p>LiftOps 不是医疗 App、诊断工具或教练替代品。</p>
+        <p>Lift Battery is not a medical app, diagnosis tool, or coach replacement.</p>
+        <p>Lift Battery 不是医疗 App、诊断工具或教练替代品。</p>
       </EvidenceNote>
 
       <EvidenceNote title="Heuristic metric disclaimer / 启发式指标说明" evidenceType="heuristic">

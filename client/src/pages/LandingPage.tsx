@@ -14,9 +14,9 @@ export function LandingPage({ selectedLevel, onSelectLevel }: LandingPageProps) 
     <main className="landing-page">
       <section className="landing-layout">
         <div>
-          <p className="landing-eyebrow">LiftOps</p>
+          <p className="landing-eyebrow">Lift Battery</p>
           <h1 className="landing-title">
-            A simple training readout for people who lift seriously.
+            Your training battery, without the spreadsheet.
           </h1>
           <p className="landing-copy">
             Log a few daily signals, then see whether today should be push, normal, lighter,

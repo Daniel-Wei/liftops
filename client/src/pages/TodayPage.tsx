@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { CSSProperties } from "react";
 import { EvidenceNote } from "../components/EvidenceNote";
 import { SectionCard } from "../components/SectionCard";
 import { getLevelData } from "../data/mockData";
@@ -71,26 +72,32 @@ export function TodayPage({ selectedLevel }: TodayPageProps) {
         </div>
 
         <div className="quick-control-grid">
-          {quickValues.map((item) => (
-            <article key={item.label} className="quick-control-card">
-              <div className="quick-control-top">
-                <div>
-                  <p className="quick-control-label">{item.label}</p>
-                  <p className="quick-control-sub">{item.labelZh}</p>
+          {quickValues.map((item) => {
+            const maxValue = Number(getMaxValue(item.label));
+            const progress = `${Math.min(100, Math.max(0, (item.value / maxValue) * 100))}%`;
+
+            return (
+              <article key={item.label} className="quick-control-card">
+                <div className="quick-control-top">
+                  <div>
+                    <p className="quick-control-label">{item.label}</p>
+                    <p className="quick-control-sub">{item.labelZh}</p>
+                  </div>
+                  <span className="quick-value-pill">{item.value}</span>
                 </div>
-                <span className="quick-value-pill">{item.value}</span>
-              </div>
-              <p className="quick-output">Changes: {item.output}</p>
-              <input
-                type="range"
-                min="1"
-                max={getMaxValue(item.label)}
-                value={item.value}
-                onChange={(event) => updateQuickValue(item.label, Number(event.target.value))}
-                className="range-input range-input--modern"
-              />
-            </article>
-          ))}
+                <p className="quick-output">Changes: {item.output}</p>
+                <input
+                  type="range"
+                  min="1"
+                  max={String(maxValue)}
+                  value={item.value}
+                  onChange={(event) => updateQuickValue(item.label, Number(event.target.value))}
+                  className="range-input range-input--modern"
+                  style={{ "--range-progress": progress } as CSSProperties}
+                />
+              </article>
+            );
+          })}
         </div>
       </section>
 
@@ -142,8 +149,8 @@ export function TodayPage({ selectedLevel }: TodayPageProps) {
       </SectionCard>
 
       <EvidenceNote title="Keep the daily habit light / 保持每日记录轻量" evidenceType="watch">
-        <p>LiftOps should feel like a quick training receipt. Advanced metrics stay optional.</p>
-        <p>LiftOps 应该像训练小票一样快速。高级指标保持可选，不强迫普通用户学习公式。</p>
+        <p>Lift Battery should feel like a quick training receipt. Advanced metrics stay optional.</p>
+        <p>Lift Battery 应该像训练小票一样快速。高级指标保持可选，不强迫普通用户学习公式。</p>
       </EvidenceNote>
     </div>
   );
