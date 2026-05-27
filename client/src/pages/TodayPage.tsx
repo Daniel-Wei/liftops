@@ -41,7 +41,7 @@ export function TodayPage({ selectedLevel }: TodayPageProps) {
   return (
     <div className="page page-stack">
       <header className="log-hero">
-        <div>
+        <div className="page-header">
           <p className="eyebrow">Today / 今天</p>
           <h1 className="page-title">Log the few signals that actually change the recommendation.</h1>
           <p className="page-subtitle">
