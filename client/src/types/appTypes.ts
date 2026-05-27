@@ -17,6 +17,41 @@ export type NavItem = {
 
 export type UserLevel = "level1" | "level2" | "level3";
 
+export type ReadinessStatus =
+  | "ready"
+  | "steady"
+  | "caution"
+  | "recovery";
+
+export type TrainingInput = {
+  sleepHours: number;
+  soreness: number;
+  motivation: number;
+  restingHeartRateDelta: number;
+  previousSessionRpe: number;
+};
+
+export type MainDriverMessage = "Short sleep" | "High soreness" | "Low motivation" 
+                                | "Resting HR above baseline" | "Hard previous session" | "No major issues";
+
+export type MainDriverReason = "sleep hours < 7" | "soreness >= 4" | "motivation <= 2" | "resting heart rate delta > 5" | "previous session RPE >= 8" | "none";
+
+export type MainDriver = {
+  message: MainDriverMessage;
+  reason: MainDriverReason;
+}
+
+export type ReadinessResult = {
+  score: number;
+  status: ReadinessStatus;
+  statusLabel: string;
+  statusLabelZh: string;
+  badgeStatus: MetricStatus;
+  recommendation: string;
+  recommendationZh: string;
+  mainDrivers: MainDriver[];
+};
+
 export type LevelProfile = {
   level: UserLevel;
   label: string;
