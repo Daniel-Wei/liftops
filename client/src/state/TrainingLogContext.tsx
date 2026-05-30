@@ -33,13 +33,15 @@ const initialTrainingInput: TrainingInput = {
   previousSessionDurationMinutes: 75,
 };
 
-const fallbackTrainingLogState: TrainingLogState = {
+const defaultTrainingLogState: TrainingLogState = {
   todayDraft: initialTrainingInput,
+  todayDraftUpdated: true,
   logs: [],
 };
 
 type TrainingLogContextValue = {
   todayDraft: TrainingInput;
+  todayDraftUpdated: boolean;
   currentReadiness: ReadinessResult;
   logs: DailyTrainingLog[];
   latestLog: DailyTrainingLog | null;
@@ -207,15 +209,45 @@ function loadTrainingLogs() {
 
 // Builds the initial reducer state from the two separate localStorage keys.
 function loadInitialTrainingLogState(): TrainingLogState {
+  const todayDraft = loadTodayDraft();
+  const logs = loadTrainingLogs();
+
   return {
-    todayDraft: loadTodayDraft(),
-    logs: loadTrainingLogs(),
+    todayDraft,
+    todayDraftUpdated: getTodayDraftUpdated(todayDraft, logs),
+    logs,
   };
 }
 
 // Uses the browser date as the saved daily log date key.
 function getTodayDate() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function getTodayLog(logs: DailyTrainingLog[]) {
+  const today = getTodayDate();
+  return logs.find((log) => log.date === today);
+}
+
+function isSameTrainingInput(firstInput: TrainingInput, secondInput: TrainingInput) {
+  return (
+    firstInput.sleepHours === secondInput.sleepHours
+    && firstInput.soreness === secondInput.soreness
+    && firstInput.motivation === secondInput.motivation
+    && firstInput.restingHeartRateDelta === secondInput.restingHeartRateDelta
+    && firstInput.previousSessionRpe === secondInput.previousSessionRpe
+    && firstInput.previousSessionDurationMinutes === secondInput.previousSessionDurationMinutes
+  );
+}
+
+function getTodayDraftUpdated(todayDraft: TrainingInput, logs: DailyTrainingLog[]) {
+  const todayLog = getTodayLog(logs);
+
+  if (!todayLog) {
+    return true;
+  }
+
+  return !isSameTrainingInput(todayDraft, todayLog.input);
 }
 
 // Keeps latestLog and last7Logs consistent without mutating the original logs array.
@@ -232,30 +264,39 @@ function trainingLogReducer(
   action: TrainingLogAction,
 ): TrainingLogState {
   switch (action.type) {
-    case TrainingLogActionType.UpdateTodayDraft:
-      return {
-        ...state,
-        todayDraft: {
-          ...state.todayDraft,
-          [action.field]: action.value,
-        },
+    case TrainingLogActionType.UpdateTodayDraft: {
+      const nextTodayDraft = {
+        ...state.todayDraft,
+        [action.field]: action.value,
       };
 
-    case TrainingLogActionType.ResetTodayDraft:
       return {
         ...state,
-        todayDraft: initialTrainingInput,
+        todayDraft: nextTodayDraft,
+        todayDraftUpdated: getTodayDraftUpdated(nextTodayDraft, state.logs),
       };
+    }
+
+    case TrainingLogActionType.ResetTodayDraft: {
+      const savedTodayDraft = getTodayLog(state.logs)?.input ?? initialTrainingInput;
+
+      return {
+        ...state,
+        todayDraft: savedTodayDraft,
+        todayDraftUpdated: false,
+      };
+    }
 
     case TrainingLogActionType.SaveTodayLog: {
       const now = new Date().toISOString();
       const today = getTodayDate();
       const currentReadiness = calculateReadiness(state.todayDraft);
-      const existingLog = state.logs.find((log) => log.date === today);
+      const existingTodayLog = getTodayLog(state.logs);
 
-      if (existingLog) {
+      if (existingTodayLog) {
         return {
           ...state,
+          todayDraftUpdated: false,
           logs: state.logs.map((log) => {
             if (log.date !== today) {
               return log;
@@ -282,14 +323,18 @@ function trainingLogReducer(
 
       return {
         ...state,
+        todayDraftUpdated: false,
         logs: [newLog, ...state.logs],
       };
     }
 
     case TrainingLogActionType.DeleteLog:
+      const nextLogs = state.logs.filter((log) => log.id !== action.id);
+
       return {
         ...state,
-        logs: state.logs.filter((log) => log.id !== action.id),
+        logs: nextLogs,
+        todayDraftUpdated: getTodayDraftUpdated(state.todayDraft, nextLogs),
       };
   }
 }
@@ -298,7 +343,7 @@ function trainingLogReducer(
 export function TrainingLogProvider({ children }: TrainingLogProviderProps) {
   const [state, dispatch] = useReducer(
     trainingLogReducer,
-    fallbackTrainingLogState,
+    defaultTrainingLogState,
     loadInitialTrainingLogState,
   );
   const currentReadiness = calculateReadiness(state.todayDraft);
@@ -344,6 +389,7 @@ export function TrainingLogProvider({ children }: TrainingLogProviderProps) {
 
   const contextValue: TrainingLogContextValue = {
     todayDraft: state.todayDraft,
+    todayDraftUpdated: state.todayDraftUpdated,
     currentReadiness,
     logs: state.logs,
     latestLog,

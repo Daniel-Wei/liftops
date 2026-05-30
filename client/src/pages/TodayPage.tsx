@@ -1,10 +1,9 @@
-import { useEffect, useReducer } from "react";
 import type { CSSProperties } from "react";
 import { EvidenceNote } from "../components/EvidenceNote";
 import { StatusBadge } from "../components/StatusBadge";
-import { calculateReadiness } from "../domain/readiness";
-import { EvidenceType, MetricStatus, TrainingLogActionType, type TrainingInput, type UserLevel } from "../types/appTypes";
 import { SectionCard } from "../components/SectionCard";
+import { useTrainingLog } from "../state/TrainingLogContext";
+import { EvidenceType, MetricStatus, type TrainingInput, type UserLevel } from "../types/appTypes";
 
 type TodayPageProps = {
   selectedLevel: UserLevel;
@@ -22,17 +21,6 @@ type ReadinessControl = {
   unit: string;
   output: string;
 };
-
-// These actions describe the only ways TodayPage can change the editable training draft.
-type TodayDraftAction =
-  | {
-      type: TrainingLogActionType.UpdateTodayDraft;
-      field: TrainingInputField;
-      value: number;
-    }
-  | {
-      type: TrainingLogActionType.ResetTodayDraft;
-    };
 
 const readinessControls = [
   {
@@ -97,75 +85,6 @@ const readinessControls = [
   },
 ] satisfies ReadinessControl[];
 
-const initialTrainingInput: TrainingInput = {
-  sleepHours: 6.5,
-  soreness: 3,
-  motivation: 3,
-  restingHeartRateDelta: 4,
-  previousSessionRpe: 8,
-  previousSessionDurationMinutes: 75,
-};
-
-const TODAY_TRAINING_INPUT_STORAGE_KEY = "liftops.todayTrainingInput";
-
-function isNumber(value: unknown) {
-  return typeof value === "number" && Number.isFinite(value);
-}
-
-// localStorage gives us untyped JSON, so this guard proves the parsed value matches TrainingInput.
-function isTrainingInput(value: unknown): value is TrainingInput {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const input = value as Record<string, unknown>;
-
-  return (
-    isNumber(input.sleepHours)
-    && isNumber(input.soreness)
-    && isNumber(input.motivation)
-    && isNumber(input.restingHeartRateDelta)
-    && isNumber(input.previousSessionRpe)
-    && isNumber(input.previousSessionDurationMinutes)
-  );
-}
-
-function loadTrainingInput() {
-  try {
-    const savedValue = localStorage.getItem(TODAY_TRAINING_INPUT_STORAGE_KEY);
-
-    if (savedValue === null) {
-      return initialTrainingInput;
-    }
-
-    // JSON.parse is unsafe because it can throw and because the parsed value has unknown shape.
-    const parsedValue: unknown = JSON.parse(savedValue);
-
-    if (isTrainingInput(parsedValue)) {
-      return parsedValue;
-    }
-
-    return initialTrainingInput;
-  } catch {
-    return initialTrainingInput;
-  }
-}
-
-// The reducer receives the current draft and an action, then returns the next draft.
-// Keep reducers pure: no localStorage, no API calls, and no direct UI changes here.
-function todayDraftReducer(todayDraft: TrainingInput, action: TodayDraftAction): TrainingInput {
-  switch (action.type) {
-    case TrainingLogActionType.UpdateTodayDraft:
-      return {
-        ...todayDraft,
-        [action.field]: action.value,
-      };
-
-    case TrainingLogActionType.ResetTodayDraft:
-      return initialTrainingInput;
-  }
-}
-
 function getRangeProgress(value: number, min: number, max: number) {
   return `${Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100))}%`;
 }
@@ -179,33 +98,22 @@ function formatInputValue(value: number, unit: string) {
 }
 
 export function TodayPage(_props: TodayPageProps) {
-  // useReducer returns the current state and a dispatch function.
-  // const [state, dispatch] = useReducer(reducer, initialArg, init);
-  // The third argument runs once on first render, so saved localStorage input can restore the draft.
-  const [todayDraft, dispatch] = useReducer(
-    todayDraftReducer,
-    initialTrainingInput,
-    () => loadTrainingInput(),
-  );
-  const readiness = calculateReadiness(todayDraft);
-
-  useEffect(() => {
-    // useEffect runs after React updates state, which makes it the right place to persist UI changes.
-    // therefore, if later other places need to update todayDraft, they can just dispatch an action
-    // and this effect will take care of persistence in localStorage.
-    try {
-      localStorage.setItem(TODAY_TRAINING_INPUT_STORAGE_KEY, JSON.stringify(todayDraft));
-    } catch {
-      // If browser storage is unavailable, keep the app usable and just skip persistence.
-    }
-  }, [todayDraft]);
+  const {
+    todayDraft,
+    currentReadiness,
+    updateTodayDraft,
+    resetTodayDraft,
+    saveTodayLog,
+    todayDraftUpdated,
+  } = useTrainingLog();
+  const readiness = currentReadiness;
 
   function updateTrainingInput(field: TrainingInputField, value: number) {
-    dispatch({ type: TrainingLogActionType.UpdateTodayDraft, field, value });
+    updateTodayDraft(field, value);
   }
 
   function resetTrainingInput() {
-    dispatch({ type: TrainingLogActionType.ResetTodayDraft });
+    resetTodayDraft();
   }
 
   return (
@@ -246,6 +154,13 @@ export function TodayPage(_props: TodayPageProps) {
           </div>
           <div className="quick-log-actions">
             <StatusBadge status={MetricStatus.Good} label="Live calculation" />
+            <StatusBadge
+              status={todayDraftUpdated ? MetricStatus.Watch : MetricStatus.Good}
+              label={todayDraftUpdated ? "Draft updated" : "No draft changes" }
+            />
+            <button type="button" className="button-dark" onClick={saveTodayLog}>
+              Save today log
+            </button>
             <button type="button" className="button-dark" onClick={resetTrainingInput}>
               Reset inputs
             </button>

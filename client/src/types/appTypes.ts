@@ -76,6 +76,8 @@ export type DailyTrainingLog = {
 export type TrainingLogState = {
   // todayDraft is the current unsaved input the user is editing on TodayPage.
   todayDraft: TrainingInput;
+  // todayDraftUpdated tracks whether the current editing draft has unsaved changes.
+  todayDraftUpdated: boolean;
   // logs are saved history records that other pages can analyze later.
   logs: DailyTrainingLog[];
 };
