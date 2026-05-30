@@ -12,6 +12,7 @@ import { TodayPage } from "./pages/TodayPage";
 import { TrainingPage } from "./pages/TrainingPage";
 import { TrendsPage } from "./pages/TrendsPage";
 import { WeeklyReviewPage } from "./pages/WeeklyReviewPage";
+import { TrainingLogProvider } from "./state/TrainingLogContext";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<PageKey>("landing");
@@ -57,8 +58,14 @@ export default function App() {
 
   return (
     <AppShell navItems={navItems} currentPage={currentPage} onNavigate={setCurrentPage}>
-      {renderPage()}
-      {currentFormula && currentPage !== "landing" ? <FormulaNote note={currentFormula} /> : null}
+      {currentPage === "landing" ? (
+        renderPage()
+      ) : (
+        <TrainingLogProvider>
+          {renderPage()}
+          {currentFormula ? <FormulaNote note={currentFormula} /> : null}
+        </TrainingLogProvider>
+      )}
     </AppShell>
   );
 }
