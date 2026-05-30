@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { NavItem, PageKey } from "../types/appTypes";
+import { PageKey, type NavItem } from "../types/appTypes";
 
 type AppShellProps = {
   navItems: NavItem[];
@@ -9,12 +9,12 @@ type AppShellProps = {
 };
 
 export function AppShell({ navItems, currentPage, onNavigate, children }: AppShellProps) {
-  if (currentPage === "landing") {
+  if (currentPage === PageKey.Landing) {
     // The landing page uses its own full-screen layout, so it skips the dashboard shell.
     return <>{children}</>;
   }
 
-  const appNavItems = navItems.filter((item) => item.key !== "landing");
+  const appNavItems = navItems.filter((item) => item.key !== PageKey.Landing);
   const activeItem = navItems.find((item) => item.key === currentPage);
 
   return (
@@ -22,7 +22,7 @@ export function AppShell({ navItems, currentPage, onNavigate, children }: AppShe
       <aside className="app-sidebar">
         <button
           type="button"
-          onClick={() => onNavigate("landing")}
+          onClick={() => onNavigate(PageKey.Landing)}
           className="brand-card"
         >
           <p className="brand-title">Lift Battery</p>
@@ -61,7 +61,7 @@ export function AppShell({ navItems, currentPage, onNavigate, children }: AppShe
           </div>
           <button
             type="button"
-            onClick={() => onNavigate("landing")}
+            onClick={() => onNavigate(PageKey.Landing)}
             className="button-dark"
           >
             Home

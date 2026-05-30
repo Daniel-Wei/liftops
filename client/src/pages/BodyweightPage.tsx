@@ -3,7 +3,7 @@ import { EvidenceNote } from "../components/EvidenceNote";
 import { MetricCard } from "../components/MetricCard";
 import { SectionCard } from "../components/SectionCard";
 import { getLevelData } from "../data/mockData";
-import type { UserLevel } from "../types/appTypes";
+import { EvidenceType, type UserLevel } from "../types/appTypes";
 
 type BodyweightPageProps = {
   selectedLevel: UserLevel;
@@ -53,7 +53,7 @@ export function BodyweightPage({ selectedLevel }: BodyweightPageProps) {
         </div>
       </SectionCard>
 
-      <EvidenceNote title="Boundary / 边界" evidenceType="watch">
+      <EvidenceNote title="Boundary / 边界" evidenceType={EvidenceType.Watch}>
         <p>Bodyweight trend helps explain training state during a cut. It is not a dieting command.</p>
         <p>体重趋势用于解释减脂期训练状态，不是节食命令。</p>
       </EvidenceNote>

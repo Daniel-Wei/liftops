@@ -5,7 +5,7 @@ import { MetricCard } from "../components/MetricCard";
 import { SectionCard } from "../components/SectionCard";
 import { StatusBadge } from "../components/StatusBadge";
 import { getLevelData } from "../data/mockData";
-import type { UserLevel } from "../types/appTypes";
+import { EvidenceType, MetricStatus, RiskSeverity, UserLevel } from "../types/appTypes";
 
 type OverviewPageProps = {
   selectedLevel: UserLevel;
@@ -29,9 +29,9 @@ export function OverviewPage({ selectedLevel }: OverviewPageProps) {
           <p className="body-text">{data.userCase.shortStoryZh}</p>
         </div>
         <div className="hero-badge-row">
-          <StatusBadge status="neutral" label={`Week ${data.trainingBlock.currentWeek} / ${data.trainingBlock.totalWeeks}`} />
-          <StatusBadge status={selectedLevel === "level1" ? "good" : "watch"} label={`Today: ${data.trainingBlock.trainingMode}`} />
-          <StatusBadge status="watch" label={data.trainingBlock.mode} />
+          <StatusBadge status={MetricStatus.Neutral} label={`Week ${data.trainingBlock.currentWeek} / ${data.trainingBlock.totalWeeks}`} />
+          <StatusBadge status={selectedLevel === UserLevel.Level1 ? MetricStatus.Good : MetricStatus.Watch} label={`Today: ${data.trainingBlock.trainingMode}`} />
+          <StatusBadge status={MetricStatus.Watch} label={data.trainingBlock.mode} />
         </div>
       </header>
 
@@ -52,7 +52,7 @@ export function OverviewPage({ selectedLevel }: OverviewPageProps) {
                     <p className="risk-title">{risk.title}</p>
                     <p className="info-subtitle">{risk.titleZh}</p>
                   </div>
-                  <StatusBadge status={risk.severity === "high" ? "risk" : "watch"} label={risk.severity} />
+                  <StatusBadge status={risk.severity === RiskSeverity.High ? MetricStatus.Risk : MetricStatus.Watch} label={risk.severity} />
                 </div>
                 <p className="risk-detail">{risk.recommendation}</p>
               </article>
@@ -66,7 +66,7 @@ export function OverviewPage({ selectedLevel }: OverviewPageProps) {
         <ChartMock title="Recovery trend" titleZh="恢复趋势" data={data.recoveryTrend} variant="green" />
       </div>
 
-      <EvidenceNote title="Boundary / 边界" evidenceType="proxy">
+      <EvidenceNote title="Boundary / 边界" evidenceType={EvidenceType.Proxy}>
         <p>Lift Battery shows interpretable training signals. It does not diagnose recovery, overtraining, or medical risk.</p>
         <p>Lift Battery 展示可解释训练信号，不诊断恢复、过度训练或医学风险。</p>
       </EvidenceNote>

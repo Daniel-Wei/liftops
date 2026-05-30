@@ -1,4 +1,11 @@
-import type { MainDriver, ReadinessResult, TrainingInput } from "../types/appTypes";
+import {
+  MainDriverId,
+  MetricStatus,
+  ReadinessStatus,
+  type MainDriver,
+  type ReadinessResult,
+  type TrainingInput,
+} from "../types/appTypes";
 
 function clampScore(score: number) {
   return Math.min(100, Math.max(0, Math.round(score)));
@@ -66,7 +73,7 @@ function getMainDrivers(input: TrainingInput) {
 
   if (input.sleepHours < 7) {
     drivers.push({
-      id: "shortSleep",
+      id: MainDriverId.ShortSleep,
       message: "Short sleep",
       reason: "sleep hours < 7",
     });
@@ -74,7 +81,7 @@ function getMainDrivers(input: TrainingInput) {
 
   if (input.soreness >= 4) {
     drivers.push({
-      id: "highSoreness",
+      id: MainDriverId.HighSoreness,
       message: "High soreness",
       reason: "soreness >= 4",
     });
@@ -82,7 +89,7 @@ function getMainDrivers(input: TrainingInput) {
 
   if (input.motivation <= 2) {
     drivers.push({
-      id: "lowMotivation",
+      id: MainDriverId.LowMotivation,
       message: "Low motivation",
       reason: "motivation <= 2",
     });
@@ -90,7 +97,7 @@ function getMainDrivers(input: TrainingInput) {
 
   if (input.restingHeartRateDelta > 5) {
     drivers.push({
-      id: "restingHeartRateAboveBaseline",
+      id: MainDriverId.RestingHeartRateAboveBaseline,
       message: "Resting HR above baseline",
       reason: "resting heart rate delta > 5",
     });
@@ -98,7 +105,7 @@ function getMainDrivers(input: TrainingInput) {
 
   if (previousSessionLoad >= 600) {
     drivers.push({
-      id: "hardPreviousSessionLoad",
+      id: MainDriverId.HardPreviousSessionLoad,
       message: "Hard previous session load",
       reason: "previous session load >= 600 AU",
     });
@@ -106,7 +113,7 @@ function getMainDrivers(input: TrainingInput) {
 
   if (drivers.length === 0) {
     drivers.push({
-      id: "noMajorIssues",
+      id: MainDriverId.NoMajorIssues,
       message: "No major issues",
       reason: "none",
     });
@@ -132,10 +139,10 @@ export function calculateReadiness(input: TrainingInput): ReadinessResult {
   if (score >= 80) {
     return {
       score,
-      status: "ready",
+      status: ReadinessStatus.Ready,
       statusLabel: "Ready",
       statusLabelZh: "状态较好",
-      badgeStatus: "good",
+      badgeStatus: MetricStatus.Good,
       recommendation: "Push the planned session if warm-ups feel normal.",
       recommendationZh: "如果热身表现正常，可以按计划推进训练。",
       mainDrivers: getMainDrivers(input),
@@ -145,10 +152,10 @@ export function calculateReadiness(input: TrainingInput): ReadinessResult {
   if (score >= 65) {
     return {
       score,
-      status: "steady",
+      status: ReadinessStatus.Steady,
       statusLabel: "Steady",
       statusLabelZh: "稳定执行",
-      badgeStatus: "neutral",
+      badgeStatus: MetricStatus.Neutral,
       recommendation: "Train as planned, but avoid adding extra volume.",
       recommendationZh: "按计划训练，但不要额外加量。",
       mainDrivers: getMainDrivers(input),
@@ -158,10 +165,10 @@ export function calculateReadiness(input: TrainingInput): ReadinessResult {
   if (score >= 50) {
     return {
       score,
-      status: "caution",
+      status: ReadinessStatus.Caution,
       statusLabel: "Caution",
       statusLabelZh: "谨慎观察",
-      badgeStatus: "watch",
+      badgeStatus: MetricStatus.Watch,
       recommendation: "Keep the session lighter and protect movement quality.",
       recommendationZh: "降低今天输出，优先保留动作质量。",
       mainDrivers: getMainDrivers(input),
@@ -170,10 +177,10 @@ export function calculateReadiness(input: TrainingInput): ReadinessResult {
 
   return {
     score,
-    status: "recovery",
+    status: ReadinessStatus.Recovery,
     statusLabel: "Recovery Priority",
     statusLabelZh: "优先恢复",
-    badgeStatus: "risk",
+    badgeStatus: MetricStatus.Risk,
     recommendation: "Make today recovery-focused or use a very light technical session.",
     recommendationZh: "今天建议以恢复为主，或只做很轻的技术练习。",
     mainDrivers: getMainDrivers(input),

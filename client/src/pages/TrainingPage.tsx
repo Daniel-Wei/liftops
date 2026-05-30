@@ -4,7 +4,7 @@ import { MetricCard } from "../components/MetricCard";
 import { SectionCard } from "../components/SectionCard";
 import { StatusBadge } from "../components/StatusBadge";
 import { getLevelData } from "../data/mockData";
-import type { UserLevel } from "../types/appTypes";
+import { EvidenceType, MetricStatus, UserLevel } from "../types/appTypes";
 
 type TrainingPageProps = {
   selectedLevel: UserLevel;
@@ -27,8 +27,8 @@ export function TrainingPage({ selectedLevel }: TrainingPageProps) {
           This page combines load, effort, and useful volume so regular lifters do not need separate sport-science tabs.
         </p>
         <div className="hero-badge-row">
-          <StatusBadge status={selectedLevel === "level1" ? "good" : "watch"} label={data.trainingBlock.trainingMode} />
-          <StatusBadge status="good" label="Useful work first" />
+          <StatusBadge status={selectedLevel === UserLevel.Level1 ? MetricStatus.Good : MetricStatus.Watch} label={data.trainingBlock.trainingMode} />
+          <StatusBadge status={MetricStatus.Good} label="Useful work first" />
         </div>
       </header>
 
@@ -61,7 +61,7 @@ export function TrainingPage({ selectedLevel }: TrainingPageProps) {
                   <p className="work-title">{item.name}</p>
                   <p className="info-subtitle">{item.nameZh}</p>
                 </div>
-                <span className={item.status === "watch" ? "signal-chip" : "signal-chip signal-chip--muted"}>
+                <span className={item.status === MetricStatus.Watch ? "signal-chip" : "signal-chip signal-chip--muted"}>
                   {item.utilisation}
                 </span>
               </article>
@@ -75,7 +75,7 @@ export function TrainingPage({ selectedLevel }: TrainingPageProps) {
         <ChartMock title="Hard sets over weeks" titleZh="Hard sets 周趋势" data={data.volumeTrend} variant="amber" />
       </div>
 
-      <EvidenceNote title="Advanced method / 进阶方法" evidenceType="established">
+      <EvidenceNote title="Advanced method / 进阶方法" evidenceType={EvidenceType.Established}>
         <p>Behind the scenes, session load uses session RPE x duration, and volume uses hard sets plus sets x reps x load where available.</p>
         <p>后台会使用 session RPE x 时长估计训练负荷，并在有数据时用 hard sets 和 sets x reps x load 理解训练量。</p>
       </EvidenceNote>

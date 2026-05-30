@@ -1,13 +1,14 @@
-export type PageKey =
-  | "landing"
-  | "overview"
-  | "today"
-  | "training"
-  | "recovery"
-  | "bodyweight"
-  | "trends"
-  | "weeklyReview"
-  | "settings";
+export enum PageKey {
+  Landing = "landing",
+  Overview = "overview",
+  Today = "today",
+  Training = "training",
+  Recovery = "recovery",
+  Bodyweight = "bodyweight",
+  Trends = "trends",
+  WeeklyReview = "weeklyReview",
+  Settings = "settings",
+}
 
 export type NavItem = {
   key: PageKey;
@@ -15,13 +16,18 @@ export type NavItem = {
   labelZh: string;
 };
 
-export type UserLevel = "level1" | "level2" | "level3";
+export enum UserLevel {
+  Level1 = "level1",
+  Level2 = "level2",
+  Level3 = "level3",
+}
 
-export type ReadinessStatus =
-  | "ready"
-  | "steady"
-  | "caution"
-  | "recovery";
+export enum ReadinessStatus {
+  Ready = "ready",
+  Steady = "steady",
+  Caution = "caution",
+  Recovery = "recovery",
+}
 
 export type TrainingInput = {
   sleepHours: number;
@@ -32,13 +38,14 @@ export type TrainingInput = {
   previousSessionDurationMinutes: number;
 };
 
-export type MainDriverId =
-  | "shortSleep"
-  | "highSoreness"
-  | "lowMotivation"
-  | "restingHeartRateAboveBaseline"
-  | "hardPreviousSessionLoad"
-  | "noMajorIssues";
+export enum MainDriverId {
+  ShortSleep = "shortSleep",
+  HighSoreness = "highSoreness",
+  LowMotivation = "lowMotivation",
+  RestingHeartRateAboveBaseline = "restingHeartRateAboveBaseline",
+  HardPreviousSessionLoad = "hardPreviousSessionLoad",
+  NoMajorIssues = "noMajorIssues",
+}
 
 export type MainDriver = {
   id: MainDriverId;
@@ -73,21 +80,28 @@ export type TrainingLogState = {
   logs: DailyTrainingLog[];
 };
 
+export enum TrainingLogActionType {
+  UpdateTodayDraft = "updateTodayDraft",
+  ResetTodayDraft = "resetTodayDraft",
+  SaveTodayLog = "saveTodayLog",
+  DeleteLog = "deleteLog",
+}
+
 // Future pages should consume derived results from logs instead of treating TodayPage as the data owner.
 export type TrainingLogAction =
   | {
-      type: "updateTodayDraft";
+      type: TrainingLogActionType.UpdateTodayDraft;
       field: keyof TrainingInput;
       value: number;
     }
   | {
-      type: "resetTodayDraft";
+      type: TrainingLogActionType.ResetTodayDraft;
     }
   | {
-      type: "saveTodayLog";
+      type: TrainingLogActionType.SaveTodayLog;
     }
   | {
-      type: "deleteLog";
+      type: TrainingLogActionType.DeleteLog;
       id: string;
     };
 
@@ -101,16 +115,38 @@ export type LevelProfile = {
   descriptionZh: string;
 };
 
-export type MetricStatus = "good" | "watch" | "risk" | "neutral";
+export enum MetricStatus {
+  Good = "good",
+  Watch = "watch",
+  Risk = "risk",
+  Neutral = "neutral",
+}
 
-export type TrendDirection = "up" | "down" | "stable";
+export enum TrendDirection {
+  Up = "up",
+  Down = "down",
+  Stable = "stable",
+}
 
-export type EvidenceType =
-  | "established"
-  | "simpleArithmetic"
-  | "heuristic"
-  | "proxy"
-  | "watch";
+export enum EvidenceType {
+  Established = "established",
+  SimpleArithmetic = "simpleArithmetic",
+  Heuristic = "heuristic",
+  Proxy = "proxy",
+  Watch = "watch",
+}
+
+export enum RiskSeverity {
+  Low = "low",
+  Medium = "medium",
+  High = "high",
+}
+
+export enum TimelinePhaseStatus {
+  Done = "done",
+  Active = "active",
+  Upcoming = "upcoming",
+}
 
 export type Metric = {
   label: string;
@@ -126,7 +162,7 @@ export type Metric = {
 export type RiskWatch = {
   title: string;
   titleZh: string;
-  severity: "low" | "medium" | "high";
+  severity: RiskSeverity;
   signals: string[];
   signalsZh: string[];
   recommendation: string;
@@ -172,7 +208,7 @@ export type TimelinePhase = {
   nameZh: string;
   startWeek: number;
   endWeek: number;
-  status: "done" | "active" | "upcoming";
+  status: TimelinePhaseStatus;
 };
 
 export type CheckInItem = {

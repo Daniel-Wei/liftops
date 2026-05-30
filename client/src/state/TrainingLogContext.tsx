@@ -9,13 +9,16 @@ import { calculateReadiness } from "../domain/readiness";
 import type {
   DailyTrainingLog,
   MainDriver,
-  MainDriverId,
-  MetricStatus,
   ReadinessResult,
-  ReadinessStatus,
   TrainingInput,
   TrainingLogAction,
   TrainingLogState,
+} from "../types/appTypes";
+import {
+  MainDriverId,
+  MetricStatus,
+  ReadinessStatus,
+  TrainingLogActionType,
 } from "../types/appTypes";
 
 const TODAY_DRAFT_STORAGE_KEY = "liftops.todayDraft";
@@ -68,27 +71,27 @@ function isString(value: unknown): value is string {
 }
 
 function isReadinessStatus(value: unknown): value is ReadinessStatus {
-  return value === "ready"
-    || value === "steady"
-    || value === "caution"
-    || value === "recovery";
+  return value === ReadinessStatus.Ready
+    || value === ReadinessStatus.Steady
+    || value === ReadinessStatus.Caution
+    || value === ReadinessStatus.Recovery;
 }
 
 function isMetricStatus(value: unknown): value is MetricStatus {
-  return value === "good"
-    || value === "watch"
-    || value === "risk"
-    || value === "neutral";
+  return value === MetricStatus.Good
+    || value === MetricStatus.Watch
+    || value === MetricStatus.Risk
+    || value === MetricStatus.Neutral;
 }
 
 // Verifies that a saved main driver uses one of our known driver ids.
 function isMainDriverId(value: unknown): value is MainDriverId {
-  return value === "shortSleep"
-    || value === "highSoreness"
-    || value === "lowMotivation"
-    || value === "restingHeartRateAboveBaseline"
-    || value === "hardPreviousSessionLoad"
-    || value === "noMajorIssues";
+  return value === MainDriverId.ShortSleep
+    || value === MainDriverId.HighSoreness
+    || value === MainDriverId.LowMotivation
+    || value === MainDriverId.RestingHeartRateAboveBaseline
+    || value === MainDriverId.HardPreviousSessionLoad
+    || value === MainDriverId.NoMajorIssues;
 }
 
 // Validates the editable TodayPage input shape after JSON.parse.
@@ -229,7 +232,7 @@ function trainingLogReducer(
   action: TrainingLogAction,
 ): TrainingLogState {
   switch (action.type) {
-    case "updateTodayDraft":
+    case TrainingLogActionType.UpdateTodayDraft:
       return {
         ...state,
         todayDraft: {
@@ -238,13 +241,13 @@ function trainingLogReducer(
         },
       };
 
-    case "resetTodayDraft":
+    case TrainingLogActionType.ResetTodayDraft:
       return {
         ...state,
         todayDraft: initialTrainingInput,
       };
 
-    case "saveTodayLog": {
+    case TrainingLogActionType.SaveTodayLog: {
       const now = new Date().toISOString();
       const today = getTodayDate();
       const currentReadiness = calculateReadiness(state.todayDraft);
@@ -283,7 +286,7 @@ function trainingLogReducer(
       };
     }
 
-    case "deleteLog":
+    case TrainingLogActionType.DeleteLog:
       return {
         ...state,
         logs: state.logs.filter((log) => log.id !== action.id),
@@ -321,22 +324,22 @@ export function TrainingLogProvider({ children }: TrainingLogProviderProps) {
 
   // Updates one numeric field in the current unsaved Today draft.
   function updateTodayDraft(field: keyof TrainingInput, value: number) {
-    dispatch({ type: "updateTodayDraft", field, value });
+    dispatch({ type: TrainingLogActionType.UpdateTodayDraft, field, value });
   }
 
   // Restores the Today draft to the default input values.
   function resetTodayDraft() {
-    dispatch({ type: "resetTodayDraft" });
+    dispatch({ type: TrainingLogActionType.ResetTodayDraft });
   }
 
   // Saves or updates today's log using the current draft and readiness result.
   function saveTodayLog() {
-    dispatch({ type: "saveTodayLog" });
+    dispatch({ type: TrainingLogActionType.SaveTodayLog });
   }
 
   // Removes one saved log from history by id.
   function deleteLog(id: string) {
-    dispatch({ type: "deleteLog", id });
+    dispatch({ type: TrainingLogActionType.DeleteLog, id });
   }
 
   const contextValue: TrainingLogContextValue = {

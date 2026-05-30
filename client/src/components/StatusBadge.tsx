@@ -1,4 +1,4 @@
-import type { MetricStatus } from "../types/appTypes";
+import { MetricStatus } from "../types/appTypes";
 
 type StatusBadgeProps = {
   status: MetricStatus;
@@ -8,15 +8,15 @@ type StatusBadgeProps = {
 export function StatusBadge({ status, label }: StatusBadgeProps) {
   let className = "status-badge status-badge--neutral";
 
-  if (status === "good") {
+  if (status === MetricStatus.Good) {
     className = "status-badge status-badge--good";
   }
 
-  if (status === "watch") {
+  if (status === MetricStatus.Watch) {
     className = "status-badge status-badge--watch";
   }
 
-  if (status === "risk") {
+  if (status === MetricStatus.Risk) {
     className = "status-badge status-badge--risk";
   }
 

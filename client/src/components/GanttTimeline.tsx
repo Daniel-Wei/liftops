@@ -1,4 +1,4 @@
-import type { TimelinePhase } from "../types/appTypes";
+import { MetricStatus, type TimelinePhase } from "../types/appTypes";
 import { StatusBadge } from "./StatusBadge";
 
 type GanttTimelineProps = {
@@ -14,7 +14,7 @@ export function GanttTimeline({ phases, currentWeek }: GanttTimelineProps) {
           <p className="section-eyebrow">Training block timeline</p>
           <h2 className="section-title">Gantt-style plan / Gantt 风格计划</h2>
         </div>
-        <StatusBadge status="neutral" label={`Week ${currentWeek}`} />
+        <StatusBadge status={MetricStatus.Neutral} label={`Week ${currentWeek}`} />
       </div>
 
       <div className="gantt-body">

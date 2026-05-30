@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { AppShell } from "./components/AppShell";
 import { FormulaNote } from "./components/FormulaNote";
 import { formulaNotes, navItems } from "./data/mockData";
-import type { PageKey, UserLevel } from "./types/appTypes";
+import { PageKey, UserLevel } from "./types/appTypes";
 import { BodyweightPage } from "./pages/BodyweightPage";
 import { LandingPage } from "./pages/LandingPage";
 import { OverviewPage } from "./pages/OverviewPage";
@@ -15,8 +15,8 @@ import { WeeklyReviewPage } from "./pages/WeeklyReviewPage";
 import { TrainingLogProvider } from "./state/TrainingLogContext";
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<PageKey>("landing");
-  const [selectedLevel, setSelectedLevel] = useState<UserLevel>("level1");
+  const [currentPage, setCurrentPage] = useState<PageKey>(PageKey.Landing);
+  const [selectedLevel, setSelectedLevel] = useState<UserLevel>(UserLevel.Level1);
   const currentFormula = formulaNotes.find((note) => note.pageKey === currentPage);
 
   useEffect(() => {
@@ -25,31 +25,31 @@ export default function App() {
 
   function renderPage() {
     switch (currentPage) {
-      case "landing":
+      case PageKey.Landing:
         return (
           <LandingPage
             selectedLevel={selectedLevel}
             onSelectLevel={(level) => {
               setSelectedLevel(level);
-              setCurrentPage("overview");
+              setCurrentPage(PageKey.Overview);
             }}
           />
         );
-      case "overview":
+      case PageKey.Overview:
         return <OverviewPage selectedLevel={selectedLevel} />;
-      case "today":
+      case PageKey.Today:
         return <TodayPage selectedLevel={selectedLevel} />;
-      case "training":
+      case PageKey.Training:
         return <TrainingPage selectedLevel={selectedLevel} />;
-      case "recovery":
+      case PageKey.Recovery:
         return <RecoveryPage selectedLevel={selectedLevel} />;
-      case "bodyweight":
+      case PageKey.Bodyweight:
         return <BodyweightPage selectedLevel={selectedLevel} />;
-      case "trends":
+      case PageKey.Trends:
         return <TrendsPage selectedLevel={selectedLevel} />;
-      case "weeklyReview":
+      case PageKey.WeeklyReview:
         return <WeeklyReviewPage selectedLevel={selectedLevel} />;
-      case "settings":
+      case PageKey.Settings:
         return <SettingsPage selectedLevel={selectedLevel} />;
       default:
         return <OverviewPage selectedLevel={selectedLevel} />;
@@ -58,7 +58,7 @@ export default function App() {
 
   return (
     <AppShell navItems={navItems} currentPage={currentPage} onNavigate={setCurrentPage}>
-      {currentPage === "landing" ? (
+      {currentPage === PageKey.Landing ? (
         renderPage()
       ) : (
         <TrainingLogProvider>

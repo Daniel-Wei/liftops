@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import { EvidenceNote } from "../components/EvidenceNote";
 import { StatusBadge } from "../components/StatusBadge";
 import { calculateReadiness } from "../domain/readiness";
-import type { TrainingInput, UserLevel } from "../types/appTypes";
+import { EvidenceType, MetricStatus, TrainingLogActionType, type TrainingInput, type UserLevel } from "../types/appTypes";
 import { SectionCard } from "../components/SectionCard";
 
 type TodayPageProps = {
@@ -26,12 +26,12 @@ type ReadinessControl = {
 // These actions describe the only ways TodayPage can change the editable training draft.
 type TodayDraftAction =
   | {
-      type: "updateTodayDraft";
+      type: TrainingLogActionType.UpdateTodayDraft;
       field: TrainingInputField;
       value: number;
     }
   | {
-      type: "resetTodayDraft";
+      type: TrainingLogActionType.ResetTodayDraft;
     };
 
 const readinessControls = [
@@ -155,13 +155,13 @@ function loadTrainingInput() {
 // Keep reducers pure: no localStorage, no API calls, and no direct UI changes here.
 function todayDraftReducer(todayDraft: TrainingInput, action: TodayDraftAction): TrainingInput {
   switch (action.type) {
-    case "updateTodayDraft":
+    case TrainingLogActionType.UpdateTodayDraft:
       return {
         ...todayDraft,
         [action.field]: action.value,
       };
 
-    case "resetTodayDraft":
+    case TrainingLogActionType.ResetTodayDraft:
       return initialTrainingInput;
   }
 }
@@ -201,11 +201,11 @@ export function TodayPage(_props: TodayPageProps) {
   }, [todayDraft]);
 
   function updateTrainingInput(field: TrainingInputField, value: number) {
-    dispatch({ type: "updateTodayDraft", field, value });
+    dispatch({ type: TrainingLogActionType.UpdateTodayDraft, field, value });
   }
 
   function resetTrainingInput() {
-    dispatch({ type: "resetTodayDraft" });
+    dispatch({ type: TrainingLogActionType.ResetTodayDraft });
   }
 
   return (
@@ -245,7 +245,7 @@ export function TodayPage(_props: TodayPageProps) {
             <h2 className="section-title">Readiness log / 状态记录</h2>
           </div>
           <div className="quick-log-actions">
-            <span className="status-badge status-badge--good">Live calculation</span>
+            <StatusBadge status={MetricStatus.Good} label="Live calculation" />
             <button type="button" className="button-dark" onClick={resetTrainingInput}>
               Reset inputs
             </button>
@@ -308,7 +308,7 @@ export function TodayPage(_props: TodayPageProps) {
         </div>
       </SectionCard>
 
-      <EvidenceNote title="Readiness is a coaching proxy / 状态分数是训练 proxy" evidenceType="proxy">
+      <EvidenceNote title="Readiness is a coaching proxy / 状态分数是训练 proxy" evidenceType={EvidenceType.Proxy}>
         <p>
           This score is a simple training-readiness estimate, not a diagnosis. It combines common
           self-report signals with resting heart rate change and previous session effort.
