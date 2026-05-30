@@ -57,6 +57,40 @@ export type ReadinessResult = {
   mainDrivers: MainDriver[];
 };
 
+export type DailyTrainingLog = {
+  id: string;
+  date: string;
+  input: TrainingInput;
+  readiness: ReadinessResult;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TrainingLogState = {
+  // todayDraft is the current unsaved input the user is editing on TodayPage.
+  todayDraft: TrainingInput;
+  // logs are saved history records that other pages can analyze later.
+  logs: DailyTrainingLog[];
+};
+
+// Future pages should consume derived results from logs instead of treating TodayPage as the data owner.
+export type TrainingLogAction =
+  | {
+      type: "updateTodayDraft";
+      field: keyof TrainingInput;
+      value: number;
+    }
+  | {
+      type: "resetTodayDraft";
+    }
+  | {
+      type: "saveTodayLog";
+    }
+  | {
+      type: "deleteLog";
+      id: string;
+    };
+
 export type LevelProfile = {
   level: UserLevel;
   label: string;
