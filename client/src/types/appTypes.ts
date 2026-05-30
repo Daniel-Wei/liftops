@@ -64,6 +64,7 @@ export type ReadinessResult = {
   mainDrivers: MainDriver[];
 };
 
+// DailyTrainingLog stores pre-workout readiness check-ins from TodayPage.
 export type DailyTrainingLog = {
   id: string;
   date: string;
@@ -71,6 +72,74 @@ export type DailyTrainingLog = {
   readiness: ReadinessResult;
   createdAt: string;
   updatedAt: string;
+};
+
+export type MuscleGroup =
+  | "Chest"
+  | "Back"
+  | "Shoulders"
+  | "Biceps"
+  | "Triceps"
+  | "Quads"
+  | "Hamstrings"
+  | "Glutes"
+  | "Calves"
+  | "Abs";
+
+export type SetEntry = {
+  id: string;
+  reps: number;
+  weightKg: number;
+  rpe?: number;
+  rir?: number;
+  isWarmup: boolean;
+};
+
+export type ExerciseEntry = {
+  id: string;
+  exerciseName: string;
+  primaryMuscleGroups: MuscleGroup[];
+  sets: SetEntry[];
+};
+
+// TrainingSession stores real post-workout lifting data, separate from readiness check-ins.
+export type TrainingSession = {
+  id: string;
+  date: string;
+  durationMinutes: number;
+  sessionRpe: number;
+  exercises: ExerciseEntry[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+// BodyweightEntry stores scale-weight data for weight trend calculations.
+export type BodyweightEntry = {
+  id: string;
+  date: string;
+  weightKg: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// NutritionEntry stores optional nutrition context for cut-pressure interpretation.
+export type NutritionEntry = {
+  id: string;
+  date: string;
+  calories?: number;
+  carbsGrams?: number;
+  hunger?: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// ProgramSettings gives Overview metrics their target context.
+export type ProgramSettings = {
+  currentWeek: number;
+  totalWeeks: number;
+  mode: string;
+  priorityMuscles: MuscleGroup[];
+  weeklyPriorityHardSetTarget: number;
 };
 
 export type TrainingLogState = {
