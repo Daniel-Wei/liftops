@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { EvidenceNote } from "../components/EvidenceNote";
-import { StatusBadge } from "../components/StatusBadge";
 import { SectionCard } from "../components/SectionCard";
+import { StatusBadge } from "../components/StatusBadge";
 import { useTrainingLog } from "../state/TrainingLogContext";
 import { EvidenceType, MetricStatus, type TrainingInput, type UserLevel } from "../types/appTypes";
 
@@ -107,6 +107,9 @@ export function TodayPage(_props: TodayPageProps) {
     todayDraftUpdated,
   } = useTrainingLog();
   const readiness = currentReadiness;
+  const batteryRingStyle = {
+    "--battery-score": `${readiness.score}%`,
+  } as CSSProperties;
 
   function updateTrainingInput(field: TrainingInputField, value: number) {
     updateTodayDraft(field, value);
@@ -118,31 +121,47 @@ export function TodayPage(_props: TodayPageProps) {
 
   return (
     <div className="page page-stack">
-      <header className="log-hero">
-        <div className="page-header">
-          <p className="eyebrow">Today / 今天</p>
-          <h1 className="page-title">Log daily signals and see today&apos;s readiness.</h1>
-          <p className="page-subtitle">
-            This prototype calculates a simple readiness score from sleep, soreness, motivation,
-            resting heart rate change, and the previous session&apos;s RPE.
-          </p>
+      <header className="dashboard-hero today-dashboard-hero">
+        <div className="dashboard-title-row">
+          <div>
+            <p className="landing-eyebrow">Today / 今天</p>
+            <h1 className="page-title">Daily signals, one readiness view.</h1>
+            <p className="page-subtitle">
+              Log the inputs that actually move the recommendation: sleep, soreness,
+              motivation, resting heart rate change, and previous session effort.
+            </p>
+          </div>
+          
         </div>
 
-        <div className="log-output-stack">
-          <div className="log-output-card log-output-card--dark">
-            <div className="metric-card-header">
-              <p className="log-output-label">Calculated readiness</p>
-              <StatusBadge status={readiness.badgeStatus} label={readiness.statusLabel} />
+        <div className="battery-focus-panel">
+          <div className="battery-ring" style={batteryRingStyle}>
+            <div className="battery-ring-core">
+              <span className="battery-score">{readiness.score}</span>
+              <span className="battery-ring-label">Readiness</span>
+              <span className="battery-ring-label-zh">今日状态</span>
             </div>
-            <p className="log-output-value">{readiness.score} / 100</p>
-            <p className="log-output-detail">{readiness.statusLabelZh}</p>
+          </div>
+          
+
+          <div className="battery-focus-copy">
+           
+            <p className="battery-focus-eyebrow">Today output / 今日输出</p>
+            <h2 className="battery-focus-title">{readiness.recommendation}</h2>
+            <p className="battery-focus-detail">{readiness.recommendationZh}</p>
           </div>
 
-          <div className="log-output-card">
-            <p className="log-output-label">Recommendation</p>
-            <p className="log-output-value">{readiness.statusLabel}</p>
-            <p className="log-output-detail">{readiness.recommendation}</p>
+          <div className="battery-focus-copy">
+             <StatusBadge
+              status={readiness.badgeStatus}
+              label={`${readiness.statusLabel} / ${readiness.statusLabelZh}`}
+            />
+            <StatusBadge
+              status={todayDraftUpdated ? MetricStatus.Watch : MetricStatus.Good}
+              label={todayDraftUpdated ? "Draft updated" : "No draft changes"}
+            />
           </div>
+
         </div>
       </header>
 
@@ -154,10 +173,6 @@ export function TodayPage(_props: TodayPageProps) {
           </div>
           <div className="quick-log-actions">
             <StatusBadge status={MetricStatus.Good} label="Live calculation" />
-            <StatusBadge
-              status={todayDraftUpdated ? MetricStatus.Watch : MetricStatus.Good}
-              label={todayDraftUpdated ? "Draft updated" : "No draft changes" }
-            />
             <button type="button" className="button-dark" onClick={saveTodayLog}>
               Save today log
             </button>
@@ -202,24 +217,24 @@ export function TodayPage(_props: TodayPageProps) {
         </div>
       </section>
 
-      <SectionCard title="Main drivers" titleZh="主要驱动因素" >
+      <SectionCard title="Main drivers" titleZh="主要驱动因素">
         <div className="compact-card-list">
-          {readiness.mainDrivers.map((md) => (
-            <article key={md.id} className="compact-signal-card">
+          {readiness.mainDrivers.map((mainDriver) => (
+            <article key={mainDriver.id} className="compact-signal-card">
               <div>
-                <p className="work-title">{md.message}</p>
+                <p className="work-title">{mainDriver.message}</p>
               </div>
-              <span className="signal-chip">{md.reason}</span>
+              <span className="signal-chip">{mainDriver.reason}</span>
             </article>
           ))}
 
           <article key={readiness.recommendation} className="compact-signal-card">
-              <div>
-                <p className="work-title">{readiness.recommendation}</p>
-                <p className="info-subtitle">{readiness.recommendationZh}</p>
-              </div>
-              <span className="signal-chip">{readiness.statusLabel}</span>
-            </article>
+            <div>
+              <p className="work-title">{readiness.recommendation}</p>
+              <p className="info-subtitle">{readiness.recommendationZh}</p>
+            </div>
+            <span className="signal-chip">{readiness.statusLabel}</span>
+          </article>
         </div>
       </SectionCard>
 
@@ -229,7 +244,8 @@ export function TodayPage(_props: TodayPageProps) {
           self-report signals with resting heart rate change and previous session effort.
         </p>
         <p>
-          这个分数只是训练状态估计，不是医学诊断。它结合了常见主观状态、静息心率变化和上次训练难度。
+          这个分数只是训练状态估计，不是医学诊断。它结合了常见主观状态、
+          静息心率变化和上次训练难度。
         </p>
       </EvidenceNote>
     </div>
