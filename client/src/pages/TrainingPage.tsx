@@ -411,48 +411,36 @@ function getPriorityMuscleSummaries(
   });
 }
 
+// Groups multiple sessions on the same date into one chart point.
+function getDateGroupedTrainingTrend(
+  trainingSessions: TrainingSession[],
+  getSessionValue: (session: TrainingSession) => number,
+): TrendPoint[] {
+  const valueByDate: { [date: string]: number } = {};
+
+  sortTrainingSessionsNewestFirst(trainingSessions).forEach((session) => {
+    const sessionValue = getSessionValue(session);
+    const currentDateValue = valueByDate[session.date] ?? 0;
+    valueByDate[session.date] = currentDateValue + sessionValue;
+  });
+
+  return Object.entries(valueByDate)
+    .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+    .slice(-7)
+    .map(([date, value]) => ({
+      label: date.slice(5),
+      value,
+    }));
+}
+
 // Charts should only use saved training sessions, not mock trend data.
 function getSessionLoadTrend(trainingSessions: TrainingSession[]): TrendPoint[] {
-  let sessionLoadByDates: { [key: string]: number } = {};
+  return getDateGroupedTrainingTrend(trainingSessions, getSessionLoad);
+}
 
-  sortTrainingSessionsNewestFirst(trainingSessions).forEach((session) => {
-    const sessionLoad = getSessionLoad(session);
-    if(sessionLoadByDates[session.date]) {
-      sessionLoadByDates[session.date] += sessionLoad;
-    }else {
-      sessionLoadByDates[session.date] = sessionLoad;
-    }
-  });
-
-  return Object.entries(sessionLoadByDates)
-    .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
-    .slice(-7)
-    .map(([date, load]) => ({
-      label: date.slice(5),
-      value: load,
-    }));
-};
-
-// Volume load trend is reps x weight, grouped by saved session.
+// Volume load trend is reps x weight, grouped by saved session date.
 function getVolumeLoadTrend(trainingSessions: TrainingSession[]): TrendPoint[] {
-  let volumeLoadByDates: { [key: string]: number } = {};
-
-  sortTrainingSessionsNewestFirst(trainingSessions).forEach((session) => {
-    const volumeLoad = getSessionVolumeLoad(session);
-    if(volumeLoadByDates[session.date]) {
-      volumeLoadByDates[session.date] += volumeLoad;
-    }else {
-      volumeLoadByDates[session.date] = volumeLoad;
-    }
-  });
-
-  return Object.entries(volumeLoadByDates)
-    .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
-    .slice(-7)
-    .map(([date, load]) => ({
-      label: date.slice(5),
-      value: load,
-    }));
+  return getDateGroupedTrainingTrend(trainingSessions, getSessionVolumeLoad);
 }
 
 export function TrainingPage(_props: TrainingPageProps) {
