@@ -15,7 +15,7 @@ function sortLogsOldestFirst(logs: DailyTrainingLog[]) {
   ));
 }
 
-function getReadinessScoreTrend(logs: DailyTrainingLog[]): TrendPoint[] {
+function getPreCheckReadinessTrend(logs: DailyTrainingLog[]): TrendPoint[] {
   return sortLogsOldestFirst(logs).slice(-7).map((log) => ({
     label: log.date.slice(5),
     value: log.readiness.score,
@@ -32,7 +32,7 @@ function getSleepTrend(logs: DailyTrainingLog[]): TrendPoint[] {
 export function TrendsPage() {
   const { logs, trainingSessions } = useTrainingLog();
 
-  const readinessScoreTrend = getReadinessScoreTrend(logs);
+  const preCheckReadinessTrend = getPreCheckReadinessTrend(logs);
   const sleepTrend = getSleepTrend(logs);
   const sessionLoadTrend = getWeeklySessionLoadTrend(trainingSessions);
   const volumeLoadTrend = getWeeklyVolumeLoadTrend(trainingSessions);
@@ -50,9 +50,9 @@ export function TrendsPage() {
 
       <div className="two-column">
         <ChartMock
-          title="Readiness score"
+          title="Pre-check records / 练前检查记录"
           titleZh="状态分趋势"
-          data={readinessScoreTrend}
+          data={preCheckReadinessTrend}
           variant="blue"
         />
         <ChartMock

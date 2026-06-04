@@ -100,6 +100,7 @@ export function TodayPage() {
     resetTodayDraft,
     saveTodayLog,
     todayDraftUpdated,
+    last7Logs,
   } = useTrainingLog();
   const readiness = currentReadiness;
   const batteryRingStyle = {
@@ -220,6 +221,24 @@ export function TodayPage() {
                 <p className="work-title">{mainDriver.message}</p>
               </div>
               <span className="signal-chip">{mainDriver.reason}</span>
+            </article>
+          ))}
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Saved pre-check records" titleZh="已保存练前检查">
+        <div className="compact-card-list">
+          {last7Logs.length === 0 ? (
+            <p className="muted-text">
+              No saved pre-check records yet. Save today&apos;s readiness check-in to send it to Trends.
+            </p>
+          ) : last7Logs.map((log) => (
+            <article key={log.id} className="compact-signal-card">
+              <div>
+                <p className="work-title">{log.date}</p>
+                <p className="info-subtitle">{log.readiness.recommendation}</p>
+              </div>
+              <span className="signal-chip">{log.readiness.score} / 100</span>
             </article>
           ))}
         </div>

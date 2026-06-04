@@ -8,6 +8,7 @@ import { useTrainingLog } from "../state/TrainingLogContext";
 import { MetricStatus, RiskSeverity, UserLevel } from "../types/appTypes";
 
 export function OverviewPage() {
+  // mock data for now, will be replaced by live data in the future
   const data = getLevelData(UserLevel.Level1);
 
   const {
