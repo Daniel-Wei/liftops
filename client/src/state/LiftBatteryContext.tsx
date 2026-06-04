@@ -35,18 +35,18 @@ import {
  } from "./LiftBatteryContextLocalStorageKeys";
 
 type LiftBatteryContextValue = {
-  todayDraft: PreCheckInput;
-  todayDraftUpdated: boolean;
+  preCheckDraft: PreCheckInput;
+  preCheckDraftUpdated: boolean;
   currentReadiness: ReadinessResult;
   preCheckLogs: DailyPreCheckLog[];
   latestLog: DailyPreCheckLog | null;
   last7Logs: DailyPreCheckLog[];
   trainingSessions: TrainingSession[];
   programSettings: ProgramSettings;
-  updateTodayDraft: (field: keyof PreCheckInput, value: number) => void;
-  resetTodayDraft: () => void;
-  saveTodayLog: () => void;
-  deleteLog: (id: string) => void;
+  updatePreCheckDraft: (field: keyof PreCheckInput, value: number) => void;
+  resetPreCheckDraft: () => void;
+  savePreCheckLog: () => void;
+  deletePreCheckLog: (id: string) => void;
   saveTrainingSession: (session: TrainingSession) => void;
   deleteTrainingSession: (id: string) => void;
   updateProgramSettings: (settings: ProgramSettings) => void;
@@ -248,18 +248,18 @@ export function LiftBatteryProvider({ children }: LiftBatteryProviderProps) {
   }
 
   const contextValue: LiftBatteryContextValue = {
-    todayDraft: state.preCheckDraft,
-    todayDraftUpdated: state.preCheckDraftUpdated,
+    preCheckDraft: state.preCheckDraft,
+    preCheckDraftUpdated: state.preCheckDraftUpdated,
     currentReadiness,
     preCheckLogs: state.preCheckLogs,
     latestLog,
     last7Logs,
     trainingSessions: state.trainingSessions,
     programSettings: state.programSettings,
-    updateTodayDraft: updatePreCheckDraft,
-    resetTodayDraft: resetPreCheckDraft,
-    saveTodayLog: savePreCheckLog,
-    deleteLog: deletePreCheckLog,
+    updatePreCheckDraft: updatePreCheckDraft,
+    resetPreCheckDraft: resetPreCheckDraft,
+    savePreCheckLog: savePreCheckLog,
+    deletePreCheckLog: deletePreCheckLog,
     saveTrainingSession,
     deleteTrainingSession,
     updateProgramSettings,

@@ -94,12 +94,12 @@ function formatInputValue(value: number, unit: string) {
 
 export function TodayPage() {
   const {
-    todayDraft,
+    preCheckDraft: todayDraft,
     currentReadiness,
-    updateTodayDraft,
+    updatePreCheckDraft: updateTodayDraft,
     resetTodayDraft,
     saveTodayLog,
-    todayDraftUpdated,
+    preCheckDraftUpdated: todayDraftUpdated,
     last7Logs,
   } = useLiftBattery();
   const readiness = currentReadiness;
