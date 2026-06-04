@@ -30,10 +30,10 @@ function getSleepTrend(logs: DailyPreCheckLog[]): TrendPoint[] {
 }
 
 export function TrendsPage() {
-  const { logs, trainingSessions } = useLiftBattery();
+  const { preCheckLogs, trainingSessions } = useLiftBattery();
 
-  const preCheckReadinessTrend = getPreCheckReadinessTrend(logs);
-  const sleepTrend = getSleepTrend(logs);
+  const preCheckReadinessTrend = getPreCheckReadinessTrend(preCheckLogs);
+  const sleepTrend = getSleepTrend(preCheckLogs);
   const sessionLoadTrend = getWeeklySessionLoadTrend(trainingSessions);
   const volumeLoadTrend = getWeeklyVolumeLoadTrend(trainingSessions);
   const estimatedPrTrend = getWeeklyEstimatedPrTrend(trainingSessions);
