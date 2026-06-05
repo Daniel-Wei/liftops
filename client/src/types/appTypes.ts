@@ -1,7 +1,7 @@
 export enum PageKey {
   Landing = "landing",
   Overview = "overview",
-  Today = "today",
+  PreCheck = "preCheck",
   Training = "training",
   Trends = "trends",
 }

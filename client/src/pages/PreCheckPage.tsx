@@ -17,7 +17,7 @@ function formatInputValue(value: number, unit: string) {
   return `${value} ${unit}`;
 }
 
-export function TodayPage() {
+export function PreCheckPage() {
   const {
     preCheckDraft,
     currentReadiness,

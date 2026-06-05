@@ -4,7 +4,7 @@ import { navItems } from "./data/mockData";
 import { PageKey } from "./types/appTypes";
 import { LandingPage } from "./pages/LandingPage";
 import { OverviewPage } from "./pages/OverviewPage";
-import { TodayPage } from "./pages/TodayPage";
+import { PreCheckPage } from "./pages/PreCheckPage";
 import { TrainingPage } from "./pages/TrainingPage";
 import { TrendsPage } from "./pages/TrendsPage";
 import { LiftBatteryProvider } from "./state/LiftBatteryContext";
@@ -20,8 +20,8 @@ export default function App() {
     switch (currentPage) {
       case PageKey.Landing:
         return <LandingPage onStart={() => setCurrentPage(PageKey.Overview)} />;
-      case PageKey.Today:
-        return <TodayPage />;
+      case PageKey.PreCheck:
+        return <PreCheckPage />;
       case PageKey.Training:
         return <TrainingPage />;
       case PageKey.Trends:
