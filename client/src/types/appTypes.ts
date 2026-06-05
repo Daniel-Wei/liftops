@@ -372,3 +372,14 @@ export type FormulaNoteData = {
   evidenceType: EvidenceType;
   references: FormulaReference[];
 };
+
+export type ReadinessControl = {
+  field: keyof PreCheckInput;
+  label: string;
+  labelZh: string;
+  min: number;
+  max: number;
+  step: number;
+  unit: string;
+  output: string;
+};
