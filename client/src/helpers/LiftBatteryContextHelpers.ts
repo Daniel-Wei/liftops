@@ -18,7 +18,7 @@ import {
     PRE_CHECK_LOGS_STORAGE_KEY,
     TRAINING_SESSIONS_STORAGE_KEY,
     PROGRAM_SETTINGS_STORAGE_KEY,
- } from "./LiftBatteryContextLocalStorageKeys";
+ } from "../state/LiftBatteryContextLocalStorageKeys";
 import { DailyPreCheckLog, LiftBatteryState, PreCheckInput, TrainingSession } from "../types/appTypes";
 
 // #region: helper functions for pre-check

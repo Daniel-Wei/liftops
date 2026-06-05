@@ -1,6 +1,6 @@
-# LiftOps API
+# LiftBattery API
 
-# LiftOps API 说明
+# LiftBattery API 说明
 
 ## English
 

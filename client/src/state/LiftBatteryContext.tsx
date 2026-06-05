@@ -26,7 +26,7 @@ import {
   getTodayDate,
   loadInitialLiftBatteryState,
   sortLogsNewestFirst,
-} from "./LiftBatteryContextHelpers";
+} from "../helpers/LiftBatteryContextHelpers";
 import { 
     PRE_CHECK_DRAFT_STORAGE_KEY,
     PRE_CHECK_LOGS_STORAGE_KEY,

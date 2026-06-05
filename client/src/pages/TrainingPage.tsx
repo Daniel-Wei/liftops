@@ -13,419 +13,36 @@ import {
 } from "../domain/trainingTrendCharts";
 import { useLiftBattery } from "../state/LiftBatteryContext";
 import {
-  EvidenceType,
   MetricStatus,
-  TrendDirection,
-  type Metric,
   type MuscleGroup,
-  type SetEntry,
   type TrainingSession,
+  type TrainingSessionForm,
+  type MuscleGroupFilter,
 } from "../types/appTypes";
+import {
+    createDefaultTrainingSessionForm,
+    getSessionExerciseName,
+    getSessionLoad,
+    getSessionSetCount,
+    getTrainingFormError,
+    doesSessionMatchMuscleGroup,
+    buildRealTrainingMetrics,
+    getExerciseSummaries,
+    getPriorityMuscleSummaries,
+} from "../helpers/TrainingPageHelpers";
+import { 
+  formatWholeNumber, 
+  getOptionalNumber, 
+  createId } 
+  from "../helpers/GenericHelpers";
+import { 
+  muscleGroupOptions, 
+  savedSessionPageSizeOptions 
+} from "../data/programValues";
 
-// The form keeps input values as strings so users can freely edit number fields before saving.
-type TrainingSessionForm = {
-  date: string;
-  durationMinutes: string;
-  sessionRpe: string;
-  exerciseName: string;
-  primaryMuscleGroup: MuscleGroup;
-  setsCount: string;
-  reps: string;
-  weightKg: string;
-  setRpe: string;
-  rir: string;
-};
-
-type TrainingSessionTextField =
-  | "date"
-  | "durationMinutes"
-  | "sessionRpe"
-  | "exerciseName"
-  | "setsCount"
-  | "reps"
-  | "weightKg"
-  | "setRpe"
-  | "rir";
-
-type ExerciseSummary = {
-  key: string;
-  exerciseName: string;
-  muscleGroups: string;
-  sessions: number;
-  sets: number;
-  volumeLoad: number;
-};
-
-type MuscleSummary = {
-  muscleGroup: MuscleGroup;
-  hardSets: number;
-  volumeLoad: number;
-};
-
-type MuscleGroupFilter = "All" | MuscleGroup;
-
-// Product requirement: saved-session pagination is intentionally limited to 5 or 10 rows.
-const savedSessionPageSizeOptions = [5, 10];
-
-const muscleGroupOptions: MuscleGroup[] = [
-  "Chest",
-  "Back",
-  "Shoulders",
-  "Biceps",
-  "Triceps",
-  "Quads",
-  "Hamstrings",
-  "Glutes",
-  "Calves",
-  "Abs",
-];
-
-function getLocalDateString() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function createId(prefix: string) {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return `${prefix}-${crypto.randomUUID()}`;
-  }
-
-  return `${prefix}-${Date.now()}-${Math.round(Math.random() * 100000)}`;
-}
-
-function createDefaultTrainingSessionForm(primaryMuscleGroup: MuscleGroup): TrainingSessionForm {
-  return {
-    date: getLocalDateString(),
-    durationMinutes: "60",
-    sessionRpe: "7",
-    exerciseName: "Squat",
-    primaryMuscleGroup,
-    setsCount: "3",
-    reps: "8",
-    weightKg: "60",
-    setRpe: "8",
-    rir: "",
-  };
-}
-
-function getOptionalNumber(value: string) {
-  if (value.trim() === "") {
-    return undefined;
-  }
-
-  return Number(value);
-}
-
-// Validates the simple post-workout form before it becomes a typed TrainingSession.
-function getTrainingFormError(form: TrainingSessionForm) {
-  const durationMinutes = Number(form.durationMinutes);
-  const sessionRpe = Number(form.sessionRpe);
-  const setsCount = Number(form.setsCount);
-  const reps = Number(form.reps);
-  const weightKg = Number(form.weightKg);
-  const setRpe = getOptionalNumber(form.setRpe);
-  const rir = getOptionalNumber(form.rir);
-
-  if (form.date.trim() === "") {
-    return "Please choose a session date.";
-  }
-
-  if (form.exerciseName.trim() === "") {
-    return "Please enter an exercise name.";
-  }
-
-  if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) {
-    return "Duration must be greater than 0 minutes.";
-  }
-
-  if (!Number.isFinite(sessionRpe) || sessionRpe < 1 || sessionRpe > 10) {
-    return "Session RPE must be between 1 and 10.";
-  }
-
-  if (!Number.isInteger(setsCount) || setsCount <= 0) {
-    return "Sets must be a whole number greater than 0.";
-  }
-
-  if (!Number.isFinite(reps) || reps <= 0) {
-    return "Reps must be greater than 0.";
-  }
-
-  if (!Number.isFinite(weightKg) || weightKg < 0) {
-    return "Weight must be 0 kg or higher.";
-  }
-
-  if (setRpe !== undefined && (!Number.isFinite(setRpe) || setRpe < 1 || setRpe > 10)) {
-    return "Set RPE must be blank or between 1 and 10.";
-  }
-
-  if (rir !== undefined && (!Number.isFinite(rir) || rir < 0)) {
-    return "RIR must be blank or 0 or higher.";
-  }
-
-  return null;
-}
-
-// Newest-first sorting makes the "latest session" card stable and predictable.
-function sortTrainingSessionsNewestFirst(trainingSessions: TrainingSession[]) {
-  return [...trainingSessions].sort((firstSession, secondSession) => (
-    secondSession.date.localeCompare(firstSession.date)
-    || secondSession.updatedAt.localeCompare(firstSession.updatedAt)
-  ));
-}
-
-function doesSessionMatchMuscleGroup(
-  session: TrainingSession,
-  selectedMuscleGroup: MuscleGroupFilter,
-) {
-  if (selectedMuscleGroup === "All") {
-    return true;
-  }
-
-  return session.primaryMuscleGroup === selectedMuscleGroup;
-}
-
-// Session load follows the common session-RPE method: session RPE x duration minutes.
-function getSessionLoad(session: TrainingSession) {
-  return session.durationMinutes * session.sessionRpe;
-}
-
-function getSessionExerciseName(session: TrainingSession) {
-  return session.exerciseName;
-}
-
-function getWorkingSets(session: TrainingSession) {
-  return session.sets.filter((set) => !set.isWarmup);
-}
-
-// Hard set is a product rule for display, not a medical or physiological diagnosis.
-function isHardSet(set: SetEntry) {
-  if (set.isWarmup) {
-    return false;
-  }
-
-  if (set.rir !== undefined) {
-    return set.rir <= 3;
-  }
-
-  if (set.rpe !== undefined) {
-    return set.rpe >= 7;
-  }
-
-  return set.reps > 0;
-}
-
-function getSessionHardSetCount(session: TrainingSession) {
-  return getWorkingSets(session).filter(isHardSet).length;
-}
-
-function getSessionSetCount(session: TrainingSession) {
-  return getWorkingSets(session).length;
-}
-
-function getSessionVolumeLoad(session: TrainingSession) {
-  return getWorkingSets(session).reduce((totalVolume, set) => (
-    totalVolume + (set.reps * set.weightKg)
-  ), 0);
-}
-
-function getTotalHardSetCount(trainingSessions: TrainingSession[]) {
-  return trainingSessions.reduce((totalSets, session) => (
-    totalSets + getSessionHardSetCount(session)
-  ), 0);
-}
-
-function getTotalVolumeLoad(trainingSessions: TrainingSession[]) {
-  return trainingSessions.reduce((totalVolume, session) => (
-    totalVolume + getSessionVolumeLoad(session)
-  ), 0);
-}
-
-function formatWholeNumber(value: number) {
-  return Math.round(value).toLocaleString("en-US");
-}
-
-function formatDecimal(value: number) {
-  return Number.isInteger(value) ? value.toString() : value.toFixed(1);
-}
-
-function getTopSetEffortValue(trainingSessions: TrainingSession[]) {
-  const workingSets = trainingSessions.flatMap(getWorkingSets);
-  const rpeValues = workingSets
-    .filter((set) => set.rpe !== undefined)
-    .map((set) => set.rpe ?? 0);
-
-  if (rpeValues.length > 0) {
-    return `RPE ${formatDecimal(Math.max(...rpeValues))}`;
-  }
-
-  const rirValues = workingSets
-    .filter((set) => set.rir !== undefined)
-    .map((set) => set.rir ?? 0);
-
-  if (rirValues.length > 0) {
-    return `${formatDecimal(Math.min(...rirValues))} RIR`;
-  }
-
-  return "No effort data";
-}
-
-function getTopSetEffortStatus(topSetEffort: string) {
-  if (topSetEffort === "No effort data") {
-    return MetricStatus.Neutral;
-  }
-
-  if (topSetEffort.startsWith("RPE ")) {
-    const rpe = Number(topSetEffort.replace("RPE ", ""));
-    return rpe >= 9 ? MetricStatus.Watch : MetricStatus.Good;
-  }
-
-  const rir = Number(topSetEffort.replace(" RIR", ""));
-  return rir <= 1 ? MetricStatus.Watch : MetricStatus.Good;
-}
-
-// Converts saved sessions into the metric-card shape used by the Training page.
-function buildRealTrainingMetrics(trainingSessions: TrainingSession[]): Metric[] {
-  const sortedSessions = sortTrainingSessionsNewestFirst(trainingSessions);
-  const latestSession = sortedSessions[0] ?? null;
-  const hardSets = getTotalHardSetCount(sortedSessions);
-  const volumeLoad = getTotalVolumeLoad(sortedSessions);
-  const topSetEffort = getTopSetEffortValue(sortedSessions);
-
-  return [
-    {
-      label: "Latest Session Load",
-      labelZh: "最近训练负荷",
-      value: latestSession ? `${formatWholeNumber(getSessionLoad(latestSession))} AU` : "No session",
-      trend: latestSession ? TrendDirection.Up : TrendDirection.Stable,
-      status: latestSession && getSessionLoad(latestSession) >= 600
-        ? MetricStatus.Watch
-        : MetricStatus.Neutral,
-      evidenceType: EvidenceType.Established,
-      explanation: "Calculated only from saved training sessions: session RPE x duration.",
-      explanationZh: "只从已保存训练记录计算：session RPE x 训练时长。",
-    },
-    {
-      label: "Latest Session Time",
-      labelZh: "最近训练时长",
-      value: latestSession ? `${latestSession.durationMinutes} min` : "No session",
-      trend: TrendDirection.Stable,
-      status: latestSession ? MetricStatus.Good : MetricStatus.Neutral,
-      evidenceType: EvidenceType.SimpleArithmetic,
-      explanation: "Uses the duration field from the latest saved session.",
-      explanationZh: "使用最近一条已保存训练记录里的训练时长。",
-    },
-    {
-      label: "Latest Session RPE",
-      labelZh: "最近训练 RPE",
-      value: latestSession ? `${latestSession.sessionRpe} / 10` : "No session",
-      trend: latestSession && latestSession.sessionRpe >= 8
-        ? TrendDirection.Up
-        : TrendDirection.Stable,
-      status: latestSession && latestSession.sessionRpe >= 8
-        ? MetricStatus.Watch
-        : MetricStatus.Neutral,
-      evidenceType: EvidenceType.Established,
-      explanation: "Uses the session RPE field from the latest saved session.",
-      explanationZh: "使用最近一条已保存训练记录里的 session RPE。",
-    },
-    {
-      label: "Saved Hard Sets",
-      labelZh: "已保存 hard sets",
-      value: `${hardSets}`,
-      trend: hardSets > 0 ? TrendDirection.Up : TrendDirection.Stable,
-      status: hardSets > 0 ? MetricStatus.Good : MetricStatus.Neutral,
-      evidenceType: EvidenceType.SimpleArithmetic,
-      explanation: "Counts saved non-warmup sets that are hard enough by RPE or RIR.",
-      explanationZh: "统计已保存训练中按 RPE 或 RIR 判断足够接近力竭的非热身组。",
-    },
-    {
-      label: "Saved Volume Load",
-      labelZh: "已保存训练量",
-      value: `${formatWholeNumber(volumeLoad)} kg`,
-      trend: volumeLoad > 0 ? TrendDirection.Up : TrendDirection.Stable,
-      status: volumeLoad > 0 ? MetricStatus.Good : MetricStatus.Neutral,
-      evidenceType: EvidenceType.Established,
-      explanation: "Sums reps x weight across saved non-warmup sets.",
-      explanationZh: "汇总已保存非热身组的 次数 x 重量。",
-    },
-    {
-      label: "Top Set Effort",
-      labelZh: "顶组努力程度",
-      value: topSetEffort,
-      trend: topSetEffort === "No effort data" ? TrendDirection.Stable : TrendDirection.Up,
-      status: getTopSetEffortStatus(topSetEffort),
-      evidenceType: EvidenceType.Established,
-      explanation: "Uses saved set RPE first, then saved RIR if RPE is missing.",
-      explanationZh: "优先使用已保存的单组 RPE；没有 RPE 时使用 RIR。",
-    },
-  ];
-}
-
-// Groups saved sessions by exercise so the page can show what the user actually trained.
-function getExerciseSummaries(trainingSessions: TrainingSession[]) {
-  const summaryMap = new Map<string, ExerciseSummary>();
-
-  trainingSessions.forEach((session) => {
-    const key = `${session.exerciseName}-${session.primaryMuscleGroup}`;
-    const existingSummary = summaryMap.get(key);
-    const workingSets = getWorkingSets(session);
-    const volumeLoad = workingSets.reduce((totalVolume, set) => (
-      totalVolume + (set.reps * set.weightKg)
-    ), 0);
-
-    if (existingSummary) {
-      existingSummary.sessions += 1;
-      existingSummary.sets += workingSets.length;
-      existingSummary.volumeLoad += volumeLoad;
-      return;
-    }
-
-    summaryMap.set(key, {
-      key,
-      exerciseName: session.exerciseName,
-      muscleGroups: session.primaryMuscleGroup,
-      sessions: 1,
-      sets: workingSets.length,
-      volumeLoad,
-    });
-  });
-
-  return [...summaryMap.values()].sort((firstSummary, secondSummary) => (
-    secondSummary.volumeLoad - firstSummary.volumeLoad
-  ));
-}
-
-// Shows whether saved sets are landing on the user's configured priority muscles.
-function getPriorityMuscleSummaries(
-  trainingSessions: TrainingSession[],
-  priorityMuscles: MuscleGroup[],
-) {
-  return priorityMuscles.map((muscleGroup) => {
-    const summary = trainingSessions.reduce<MuscleSummary>((currentSummary, session) => {
-      if (session.primaryMuscleGroup !== muscleGroup) {
-        return currentSummary;
-      }
-
-      const workingSets = getWorkingSets(session);
-      currentSummary.hardSets += workingSets.filter(isHardSet).length;
-      currentSummary.volumeLoad += workingSets.reduce((totalVolume, set) => (
-        totalVolume + (set.reps * set.weightKg)
-      ), 0);
-
-      return currentSummary;
-    }, {
-      muscleGroup,
-      hardSets: 0,
-      volumeLoad: 0,
-    });
-
-    return summary;
-  });
-}
+import { TrainingSessionTextField } from "../types/appTypes";
 
 export function TrainingPage() {
-  // TrainingLogContext is the real data source for this page.
-  // This component should not read mock training data for any card, list, or chart below.
-  // If a value appears on this page, it should be derived from these saved sessions.
   const {
     trainingSessions,
     saveTrainingSession,
@@ -433,20 +50,20 @@ export function TrainingPage() {
     programSettings,
   } = useLiftBattery();
 
-  // The save form defaults to the user's first priority muscle so newly entered sessions
-  // immediately line up with the priority-muscle summaries shown lower on the page.
+  // #region: states
+
+  // #region: training session form states
   const defaultPrimaryMuscleGroup = programSettings.priorityMuscles[0] ?? "Back";
 
-  // Form state stays as strings because number inputs can temporarily hold partial values
-  // while a user is typing. Validation converts these strings into numbers before saving.
   const [trainingForm, setTrainingForm] = useState<TrainingSessionForm>(() => (
     createDefaultTrainingSessionForm(defaultPrimaryMuscleGroup)
   ));
   const [formError, setFormError] = useState("");
+  // #endregion
 
-  // Saved-session filters are UI state only. They do not mutate the stored sessions;
-  // they decide which saved sessions feed the visible list, summaries, metric cards, and charts.
+  // #region: saved session filter states
   const [selectedMuscleGroupFilter, setSelectedMuscleGroupFilter] = useState<MuscleGroupFilter>("All");
+
   const trainingTrendWeeks = getTrainingTrendWeeks();
   const [selectedWeekLabel, setSelectedWeekLabel] = useState(() => (
     getCurrentTrainingTrendWeek().label
@@ -454,69 +71,59 @@ export function TrainingPage() {
   const selectedWeek = trainingTrendWeeks.find((week) => week.label === selectedWeekLabel)
     ?? getCurrentTrainingTrendWeek();
 
-  // Pagination is intentionally scoped to the saved-session list. The summary cards and trend charts
-  // still use the full filtered range so changing page size does not change analysis results.
   const [savedSessionPageSize, setSavedSessionPageSize] = useState(5);
   const [savedSessionPage, setSavedSessionPage] = useState(1);
+  // #endregion
 
-  // Everything below is derived from the same filtered session list.
-  // The saved-session table, metric cards, summaries, and both trends should agree.
-  // Order matters: first normalize newest-first ordering, then apply week, then muscle filter.
-  const sortedTrainingSessions = sortTrainingSessionsNewestFirst(trainingSessions);
+  // #endregion
 
-  // Week range is applied before muscle group so the top badge and charts describe the same period.
-  const weekTrainingSessions = sortedTrainingSessions.filter((session) => (
+  // #region: sorted and filtered saved training sessions: for current training week and muscle group filter
+  const weekTrainingSessions = trainingSessions.filter((session) => (
     isSessionInTrainingTrendWeek(session, selectedWeek)
   ));
-
-  // Muscle filtering is a direct field comparison because a saved session now has one exercise
-  // and one primary muscle group.
   const filteredTrainingSessions = weekTrainingSessions.filter((session) => (
     doesSessionMatchMuscleGroup(session, selectedMuscleGroupFilter)
   ));
-
-  // The label is computed once so the hero badge and both trend titles stay consistent.
   const selectedWeekDisplayLabel = formatTrainingTrendWeekLabel(selectedWeek);
-
-  // "Latest" always means latest within the active filters, not latest across all saved history.
   const latestSession = filteredTrainingSessions[0] ?? null;
 
-  // Keep at least one page even when the filtered list is empty. This keeps the pagination label
-  // stable and avoids rendering "Page 1 / 0".
+  // #endregion
+
+  // #region: pagination for saved sessions: calculate total pages and slice the filtered sessions to only show the current page
+  
   const totalSavedSessionPages = Math.max(
     1,
     Math.ceil(filteredTrainingSessions.length / savedSessionPageSize),
   );
 
-  // Filter and page-size changes reset to page one, but deletes or loaded storage data can still
-  // shrink the result set. Clamp the rendered page so it never points past the last valid page.
   const visibleSavedSessionPage = Math.min(savedSessionPage, totalSavedSessionPages);
   const savedSessionStartIndex = (visibleSavedSessionPage - 1) * savedSessionPageSize;
 
-  // Only the list is paginated. Downstream analysis still uses filteredTrainingSessions.
   const latestTrainingSessions = filteredTrainingSessions.slice(
     savedSessionStartIndex,
     savedSessionStartIndex + savedSessionPageSize,
   );
 
-  // Metric cards summarize the complete filtered range. The first metric is promoted into
-  // the hero panel, while the remaining metrics render in the secondary grid.
+  // #endregion
+
+  // #region: derive training metrics and summaries from the filtered sessions for the current training week and muscle group filter
+  
   const realTrainingMetrics = buildRealTrainingMetrics(filteredTrainingSessions);
   const mainSessionLoadMetric = realTrainingMetrics[0];
   const secondaryTrainingMetrics = realTrainingMetrics.slice(1);
 
-  // Exercise and priority-muscle summaries use the same filtered range as the metric cards.
-  // This prevents the user from seeing one date range in the list and another in the analysis.
   const exerciseSummaries = getExerciseSummaries(filteredTrainingSessions);
   const priorityMuscleSummaries = getPriorityMuscleSummaries(
     filteredTrainingSessions,
     programSettings.priorityMuscles,
   );
 
-  // Both trend charts are generated from saved sessions only.
-  // Volume shows total work, while estimated PR uses an e1RM proxy from saved sets.
   const volumeLoadTrend = getWeeklyVolumeLoadTrend(filteredTrainingSessions);
   const estimatedPrTrend = getWeeklyEstimatedPrTrend(filteredTrainingSessions);
+
+  // #endregion
+
+  // #region: event handlers
 
   function handleTrainingWeekChange(value: string) {
     const selectedWeekOption = trainingTrendWeeks.find((week) => week.label === value);
@@ -527,8 +134,7 @@ export function TrainingPage() {
     }
   }
 
-  // Muscle changes can alter the filtered list length, so reset pagination to the first page.
-  function handleMuscleGroupFilterChange(value: string) {
+  function handleMuscleGroupFilterChange(value: MuscleGroup) {
     if (value === "All") {
       setSelectedMuscleGroupFilter("All");
       setSavedSessionPage(1);
@@ -545,18 +151,15 @@ export function TrainingPage() {
     }
   }
 
-  // Page-size options are guarded against arbitrary values because the select is a UI boundary,
-  // but browser/devtool edits could still send an unexpected value.
-  function handleSavedSessionPageSizeChange(value: string) {
+  function handleSavedSessionPageSizeChange(value: number) {
     const nextPageSize = Number(value);
-
+    
     if (savedSessionPageSizeOptions.includes(nextPageSize)) {
       setSavedSessionPageSize(nextPageSize);
       setSavedSessionPage(1);
     }
   }
 
-  // Generic text-field updater keeps the long form JSX from needing one handler per input.
   function updateTrainingFormTextField(field: TrainingSessionTextField, value: string) {
     setTrainingForm((currentForm) => ({
       ...currentForm,
@@ -564,8 +167,6 @@ export function TrainingPage() {
     }));
   }
 
-  // Primary muscle is typed separately from generic text fields so only known muscle groups
-  // can be written into the draft session.
   function updatePrimaryMuscleGroup(value: MuscleGroup) {
     setTrainingForm((currentForm) => ({
       ...currentForm,
@@ -573,8 +174,7 @@ export function TrainingPage() {
     }));
   }
 
-  // Convert the select's string value back into the MuscleGroup union before updating state.
-  function handlePrimaryMuscleGroupChange(value: string) {
+  function handlePrimaryMuscleGroupChange(value: MuscleGroup) {
     const selectedMuscleGroup = muscleGroupOptions.find((muscleGroup) => (
       muscleGroup === value
     ));
@@ -584,8 +184,6 @@ export function TrainingPage() {
     }
   }
 
-  // Save turns the simple post-workout form into the app's tightened TrainingSession shape:
-  // one exercise name, one primary muscle, repeated working sets, timestamps, and optional effort fields.
   function handleSaveTrainingSession() {
     const nextError = getTrainingFormError(trainingForm);
 
@@ -626,6 +224,8 @@ export function TrainingPage() {
     saveTrainingSession(session);
     setFormError("");
   }
+
+  // #endregion
 
   return (
     <div className="page page-stack">
@@ -760,7 +360,7 @@ export function TrainingPage() {
             <select
               className="training-input"
               value={trainingForm.primaryMuscleGroup}
-              onChange={(event) => handlePrimaryMuscleGroupChange(event.target.value)}
+              onChange={(event) => handlePrimaryMuscleGroupChange(event.target.value as MuscleGroup)}
             >
               {muscleGroupOptions.map((muscleGroup) => (
                 <option key={muscleGroup} value={muscleGroup}>{muscleGroup}</option>
@@ -866,7 +466,7 @@ export function TrainingPage() {
                 <select
                   className="training-input training-input--compact"
                   value={selectedMuscleGroupFilter}
-                  onChange={(event) => handleMuscleGroupFilterChange(event.target.value)}
+                  onChange={(event) => handleMuscleGroupFilterChange(event.target.value as MuscleGroup)}
                 >
                   <option value="All">All</option>
                   {muscleGroupOptions.map((muscleGroup) => (
@@ -880,7 +480,7 @@ export function TrainingPage() {
                 <select
                   className="training-input training-input--compact"
                   value={savedSessionPageSize}
-                  onChange={(event) => handleSavedSessionPageSizeChange(event.target.value)}
+                  onChange={(event) => handleSavedSessionPageSizeChange(Number(event.target.value))}
                 >
                   {savedSessionPageSizeOptions.map((pageSize) => (
                     <option key={pageSize} value={pageSize}>{pageSize}</option>

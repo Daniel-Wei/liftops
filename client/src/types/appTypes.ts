@@ -80,7 +80,8 @@ export type MuscleGroup =
   | "Hamstrings"
   | "Glutes"
   | "Calves"
-  | "Abs";
+  | "Abs"
+  | "All";
 
 export type SetEntry = {
   id: string;
@@ -383,3 +384,47 @@ export type ReadinessControl = {
   unit: string;
   output: string;
 };
+
+// #region TrainingPage types
+// The form keeps input values as strings so users can freely edit number fields before saving.
+export type TrainingSessionForm = {
+  date: string;
+  durationMinutes: string;
+  sessionRpe: string;
+  exerciseName: string;
+  primaryMuscleGroup: MuscleGroup;
+  setsCount: string;
+  reps: string;
+  weightKg: string;
+  setRpe: string;
+  rir: string;
+};
+
+export type TrainingSessionTextField =
+  | "date"
+  | "durationMinutes"
+  | "sessionRpe"
+  | "exerciseName"
+  | "setsCount"
+  | "reps"
+  | "weightKg"
+  | "setRpe"
+  | "rir";
+
+export type ExerciseSummary = {
+  key: string;
+  exerciseName: string;
+  muscleGroups: string;
+  sessions: number;
+  sets: number;
+  volumeLoad: number;
+};
+
+export type MuscleSummary = {
+  muscleGroup: MuscleGroup;
+  hardSets: number;
+  volumeLoad: number;
+};
+
+export type MuscleGroupFilter = "All" | MuscleGroup;
+// #endregion
