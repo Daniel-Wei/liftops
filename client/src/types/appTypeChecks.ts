@@ -160,22 +160,5 @@ export function isSetArray(value: unknown): value is SetEntry[] {
   return Array.isArray(value) && value.every(isSetEntry);
 }
 
-export function isTrainingSession(value: unknown): value is TrainingSession {
-  if (!isStringKeyValuePairObjectRecord(value)) {
-    return false;
-  }
 
-  return (
-    isString(value.id)
-    && isString(value.date)
-    && isNumber(value.durationMinutes)
-    && isNumber(value.sessionRpe)
-    && isString(value.exerciseName)
-    && isMuscleGroup(value.primaryMuscleGroup)
-    && Array.isArray(value.sets)
-    && value.sets.every(isSetEntry)
-    && isString(value.createdAt)
-    && isString(value.updatedAt)
-  );
-}
 // #endregion

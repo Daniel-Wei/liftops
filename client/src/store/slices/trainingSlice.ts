@@ -1,0 +1,48 @@
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import type {
+  TrainingSession,
+} from "../../types/appTypes";
+import { loadSavedTrainingSessions } from "../../helpers/TrainingPageHelpers";
+
+type UpdateTrainingPayload = TrainingSession;
+
+type TrainingState = {
+  trainingSessions: TrainingSession[]
+};
+
+function getInitialTrainingState(): TrainingState {
+  const savedTrainingSessions = [...loadSavedTrainingSessions()];
+  return {
+    trainingSessions: savedTrainingSessions,
+  };
+}
+
+const trainingSlice = createSlice({
+  name: "training",
+  initialState: getInitialTrainingState(),
+  reducers: {
+    saveTrainingSession: (state, action: PayloadAction<UpdateTrainingPayload>) => {
+      let existedSession = state.trainingSessions.find((session) => (
+        session.id === action.payload.id
+      ));
+
+      if (existedSession !== undefined) {
+        existedSession = {...action.payload};
+      }else{
+        state.trainingSessions.push({...action.payload});
+      }
+    },
+
+    
+    deleteTrainingSession: (state, action: PayloadAction<string>) => {
+      state.trainingSessions.filter(ts => ts.id !== action.payload);
+    },
+  },
+});
+
+export const { 
+  saveTrainingSession,
+  deleteTrainingSession
+} = trainingSlice.actions;
+
+export const trainingSliceReducer = trainingSlice.reducer;

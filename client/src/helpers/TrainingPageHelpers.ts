@@ -17,6 +17,15 @@ import {
     TrendDirection,
     EvidenceType,} 
 from "../types/appTypes";
+import { TRAINING_SESSIONS_STORAGE_KEY } from "../data/LiftBatteryContextLocalStorageKeys"
+import {
+  isString,
+  isNumber,
+  isStringKeyValuePairObjectRecord,
+  isMuscleGroup,
+  isSetArray,
+  isSetEntry,
+} from "../types/appTypeChecks";
 
 export function createDefaultTrainingSessionForm(primaryMuscleGroup: MuscleGroup): TrainingSessionForm {
   return {
@@ -334,4 +343,101 @@ export function getPriorityMuscleSummaries(
 
     return summary;
   });
+}
+
+export function loadSavedTrainingSessions() {
+  try {
+    const savedValue = localStorage.getItem(TRAINING_SESSIONS_STORAGE_KEY);
+
+    if (savedValue === null) {
+      return [];
+    }
+
+    const parsedValue: unknown = JSON.parse(savedValue);
+
+    const trainingSessions = getTrainingSessionArrayFromStorage(parsedValue);
+
+    if (trainingSessions !== null) {
+      return trainingSessions;
+    }
+
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+function getTrainingSessionArrayFromStorage(value: unknown): TrainingSession[] | null {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  const trainingSessions: TrainingSession[] = [];
+
+  for (const storedSession of value) {
+    const trainingSession = getTrainingSessionFromStorage(storedSession);
+
+    if (trainingSession === null) {
+      return null;
+    }
+
+    trainingSessions.push(trainingSession);
+  }
+
+  return trainingSessions;
+}
+
+function getTrainingSessionFromStorage(value: unknown): TrainingSession | null {
+  if (isTrainingSession(value)) {
+    return value;
+  }
+
+  if (!isStringKeyValuePairObjectRecord(value)) {
+    return null;
+  }
+
+  if (
+    !isString(value.id)
+    || !isString(value.date)
+    || !isNumber(value.durationMinutes)
+    || !isNumber(value.sessionRpe)
+    || !isString(value.exerciseName)
+    || !isSetArray(value.sets)
+    || !isString(value.createdAt)
+    || !isString(value.updatedAt)
+    || !isMuscleGroup(value.primaryMuscleGroup)
+  ) {
+    return null;
+  }
+
+  return {
+    id: value.id,
+    date: value.date,
+    durationMinutes: value.durationMinutes,
+    sessionRpe: value.sessionRpe,
+    exerciseName: value.exerciseName,
+    primaryMuscleGroup: value.primaryMuscleGroup,
+    sets: value.sets,
+    createdAt: value.createdAt,
+    updatedAt: value.updatedAt,
+  };
+}
+
+function isTrainingSession(value: unknown): value is TrainingSession {
+  if (!isStringKeyValuePairObjectRecord(value)) {
+    return false;
+  }
+
+  return (
+    isString(value.id)
+    && isString(value.date)
+    && isNumber(value.durationMinutes)
+    && isNumber(value.sessionRpe)
+    && isString(value.exerciseName)
+    && isMuscleGroup(value.primaryMuscleGroup)
+    && Array.isArray(value.sets)
+    && value.sets.every(isSetEntry)
+    && isString(value.createdAt)
+    && isString(value.updatedAt)
+  );
 }

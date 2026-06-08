@@ -8,7 +8,6 @@ import { OverviewPage } from "./pages/OverviewPage";
 import { PreCheckPage } from "./pages/PreCheckPage";
 import { TrainingPage } from "./pages/TrainingPage";
 import { TrendsPage } from "./pages/TrendsPage";
-import { LiftBatteryProvider } from "./state/LiftBatteryContext";
 import { liftBatteryStore } from "./store/liftBatteryStore";
 
 export default function App() {

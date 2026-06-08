@@ -5,19 +5,20 @@ import {
   getWeeklySessionLoadTrend,
   getWeeklyVolumeLoadTrend,
 } from "../domain/trainingTrendCharts";
-import { useLiftBattery } from "../state/LiftBatteryContext";
 import { 
   getPreCheckReadinessTrend, 
   getSleepTrend 
 } 
-  from "../helpers/TrendsPageHelpers";
-
+from "../helpers/TrendsPageHelpers";
+import { useAppSelector } from "../store/hooks";
+import { getPreCheckData } from "../store/selectors/preCheckSelector";
+import { getTrainingData } from "../store/selectors/trainingSelector";
 
 export function TrendsPage() {
-  const { preCheckLogs, trainingSessions } = useLiftBattery();
-
-  const preCheckReadinessTrend = getPreCheckReadinessTrend(preCheckLogs);
-  const sleepTrend = getSleepTrend(preCheckLogs);
+  const { savedPreCheckLogs } = useAppSelector(getPreCheckData);
+  const { trainingSessions } = useAppSelector(getTrainingData);
+  const preCheckReadinessTrend = getPreCheckReadinessTrend(savedPreCheckLogs);
+  const sleepTrend = getSleepTrend(savedPreCheckLogs);
   const sessionLoadTrend = getWeeklySessionLoadTrend(trainingSessions);
   const volumeLoadTrend = getWeeklyVolumeLoadTrend(trainingSessions);
   const estimatedPrTrend = getWeeklyEstimatedPrTrend(trainingSessions);

@@ -1,9 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { preCheckSliceReducer } from "./slices/preCheckSlice";
+import { trainingSliceReducer } from "./slices/trainingSlice";
+import { programSettingsSliceReducer } from "./slices/programSettingsSlice";
 
 export const liftBatteryStore = configureStore({
   reducer: {
     preCheck: preCheckSliceReducer,
+    training: trainingSliceReducer,
+    prgramSettings: programSettingsSliceReducer
   },
 });
 

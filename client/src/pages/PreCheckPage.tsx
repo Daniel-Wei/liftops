@@ -1,5 +1,5 @@
 import { useEffect, type CSSProperties } from "react";
-import { PRE_CHECK_LOGS_STORAGE_KEY } from "../state/LiftBatteryContextLocalStorageKeys";
+import { PRE_CHECK_LOGS_STORAGE_KEY } from "../data/LiftBatteryContextLocalStorageKeys";
 import { SectionCard } from "../components/SectionCard";
 import { StatusBadge } from "../components/StatusBadge";
 import { MetricStatus } from "../types/appTypes";

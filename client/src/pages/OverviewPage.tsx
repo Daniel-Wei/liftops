@@ -7,16 +7,17 @@ import { getDerivedOverviewMetrics } from "../domain/overviewMetrics";
 import { useAppSelector } from "../store/hooks";
 import { MetricStatus, RiskSeverity, UserLevel } from "../types/appTypes";
 import { getPreCheckData, selectCurrentReadiness } from "../store/selectors/preCheckSelector";
+import { getTrainingData } from "../store/selectors/trainingSelector";
+import { getProgramSettings } from "../store/selectors/programSettingsSelector";
 
 export function OverviewPage() {
   // mock data for now, will be replaced by live data in the future
   const data = getLevelData(UserLevel.Level1);
-
-  const { 
-    latestLog
-  } = useAppSelector(getPreCheckData);
-
   const currentReadiness = useAppSelector(selectCurrentReadiness);
+  const { latest7Logs } = useAppSelector(getPreCheckData);
+  const latestLog = latest7Logs?.[0] ?? null;
+  const { trainingSessions } = useAppSelector(getTrainingData);
+  const { programSettings } = useAppSelector(getProgramSettings);
 
   const derivedOverviewMetrics = getDerivedOverviewMetrics({
     trainingSessions,

@@ -11,7 +11,6 @@ import {
   getWeeklyVolumeLoadTrend,
   isSessionInTrainingTrendWeek,
 } from "../domain/trainingTrendCharts";
-import { useLiftBattery } from "../state/LiftBatteryContext";
 import {
   MetricStatus,
   type MuscleGroup,
@@ -28,7 +27,6 @@ import {
     doesSessionMatchMuscleGroup,
     sortTrainingSessionsNewestFirst,
     buildRealTrainingMetrics,
-    getExerciseSummaries,
     getPriorityMuscleSummaries,
 } from "../helpers/TrainingPageHelpers";
 import { 
@@ -42,15 +40,15 @@ import {
 } from "../data/programValues";
 
 import { TrainingSessionTextField } from "../types/appTypes";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { deleteTrainingSession, saveTrainingSession } from "../store/slices/trainingSlice";
+import { getProgramSettings } from "../store/selectors/programSettingsSelector";
+import { getTrainingData } from "../store/selectors/trainingSelector";
 
 export function TrainingPage() {
-  const {
-    trainingSessions,
-    saveTrainingSession,
-    deleteTrainingSession,
-    programSettings,
-  } = useLiftBattery();
-
+ const dispatch = useAppDispatch();
+ const { programSettings } = useAppSelector(getProgramSettings);
+ const { trainingSessions } = useAppSelector(getTrainingData);
   // #region: states
 
   // #region: training session form states
@@ -114,14 +112,11 @@ export function TrainingPage() {
   const mainSessionLoadMetric = realTrainingMetrics[0];
   const secondaryTrainingMetrics = realTrainingMetrics.slice(1);
 
-  const exerciseSummaries = getExerciseSummaries(sortedFilteredTrainingSessions);
   const priorityMuscleSummaries = getPriorityMuscleSummaries(
     sortedFilteredTrainingSessions,
     programSettings.priorityMuscles,
   );
 
-  const volumeLoadTrend = getWeeklyVolumeLoadTrend(sortedFilteredTrainingSessions);
-  const estimatedPrTrend = getWeeklyEstimatedPrTrend(sortedFilteredTrainingSessions);
 
   // #endregion
 
@@ -223,7 +218,7 @@ export function TrainingPage() {
       updatedAt: now,
     };
 
-    saveTrainingSession(session);
+    () => dispatch(saveTrainingSession(session));
     setFormError("");
   }
 
@@ -511,7 +506,7 @@ export function TrainingPage() {
                   <button
                     type="button"
                     className="text-button"
-                    onClick={() => deleteTrainingSession(session.id)}
+                    onClick={() => dispatch(deleteTrainingSession(session.id))}
                   >
                     Delete
                   </button>
