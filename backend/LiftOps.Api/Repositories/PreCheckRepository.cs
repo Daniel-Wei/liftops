@@ -18,4 +18,22 @@ public sealed class PreCheckRepository : IPreCheckRepository
         _logsByDate.AddOrUpdate(log.Date, log, (_, _) => log);
         return Task.FromResult(log);
     }
+
+    public Task<PreCheckLog?> DeleteByIdAsync(string id)
+    {
+        foreach (var entry in _logsByDate)
+        {
+            if (entry.Value.Id != id)
+            {
+                continue;
+            }
+
+            if (_logsByDate.TryRemove(entry.Key, out var deletedLog))
+            {
+                return Task.FromResult<PreCheckLog?>(deletedLog);
+            }
+        }
+
+        return Task.FromResult<PreCheckLog?>(null);
+    }
 }

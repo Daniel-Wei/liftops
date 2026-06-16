@@ -1,5 +1,4 @@
 import {
-  isTrainingSession,
   isString,
   isNumber,
   isStringKeyValuePairObjectRecord,
@@ -18,8 +17,8 @@ import {
     PRE_CHECK_LOGS_STORAGE_KEY,
     TRAINING_SESSIONS_STORAGE_KEY,
     PROGRAM_SETTINGS_STORAGE_KEY,
- } from "../state/LiftBatteryContextLocalStorageKeys";
-import { PreCheckLog, LiftBatteryState, PreCheckDetailsLog, TrainingSession } from "../types/appTypes";
+ } from "../data/localStorageKeys";
+import type { TrainingSession } from "../types/appTypes";
 
 // #region: helper functions for pre-check
 // Loads the current unsaved draft, falling back safely if storage is empty or invalid.
@@ -48,10 +47,6 @@ function loadPreCheck() {
 
 //#region: helper functions for training sessions
 function getTrainingSessionFromStorage(value: unknown): TrainingSession | null {
-  if (isTrainingSession(value)) {
-    return value;
-  }
-
   if (!isStringKeyValuePairObjectRecord(value)) {
     return null;
   }

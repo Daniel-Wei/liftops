@@ -25,4 +25,10 @@ public sealed class PreCheckService : IPreCheckService
         var savedLog = await _repository.SaveAsync(PreCheckMapping.ToModel(dto));
         return PreCheckMapping.ToDto(savedLog);
     }
+
+    public async Task<PreCheckDto?> DeleteAsync(string id)
+    {
+        var deletedLog = await _repository.DeleteByIdAsync(id);
+        return deletedLog is null ? null : PreCheckMapping.ToDto(deletedLog);
+    }
 }

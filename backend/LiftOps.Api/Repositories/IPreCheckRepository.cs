@@ -6,4 +6,5 @@ public interface IPreCheckRepository
 {
     Task<PreCheckLog?> GetByDateAsync(DateOnly date);
     Task<PreCheckLog> SaveAsync(PreCheckLog log);
+    Task<PreCheckLog?> DeleteByIdAsync(string id);
 }

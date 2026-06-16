@@ -39,14 +39,14 @@ import {
 import { TrainingSessionTextField } from "../types/appTypes";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { deleteTrainingSession, saveTrainingSession } from "../store/slices/trainingSlice";
-import { getProgramSettings } from "../store/selectors/programSettingsSelector";
-import { getTrainingData } from "../store/selectors/trainingSelector";
+import { selectProgramSettings } from "../store/selectors/programSettingsSelector";
+import { selectTrainingSessions } from "../store/selectors/trainingSelector";
 import { TRAINING_SESSIONS_STORAGE_KEY } from "../data/localStorageKeys";
 
 export function TrainingPage() {
  const dispatch = useAppDispatch();
- const { programSettings } = useAppSelector(getProgramSettings);
- const { trainingSessions } = useAppSelector(getTrainingData);
+ const programSettings = useAppSelector(selectProgramSettings);
+ const trainingSessions = useAppSelector(selectTrainingSessions);
   // #region: states
 
   // #region: training session form states

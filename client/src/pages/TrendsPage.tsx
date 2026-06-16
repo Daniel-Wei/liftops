@@ -12,11 +12,11 @@ import {
 from "../helpers/TrendsPageHelpers";
 import { useAppSelector } from "../store/hooks";
 import { getPreCheckData } from "../store/selectors/preCheckSelector";
-import { getTrainingData } from "../store/selectors/trainingSelector";
+import { selectTrainingSessions } from "../store/selectors/trainingSelector";
 
 export function TrendsPage() {
   const { savedPreCheckLogs } = useAppSelector(getPreCheckData);
-  const { trainingSessions } = useAppSelector(getTrainingData);
+  const trainingSessions = useAppSelector(selectTrainingSessions);
   const preCheckReadinessTrend = getPreCheckReadinessTrend(savedPreCheckLogs);
   const sleepTrend = getSleepTrend(savedPreCheckLogs);
   const sessionLoadTrend = getWeeklySessionLoadTrend(trainingSessions);

@@ -7,8 +7,8 @@ import { getDerivedOverviewMetrics } from "../domain/overviewMetrics";
 import { useAppSelector } from "../store/hooks";
 import { MetricStatus, RiskSeverity, UserLevel } from "../types/appTypes";
 import { getPreCheckData, selectCurrentReadiness } from "../store/selectors/preCheckSelector";
-import { getTrainingData } from "../store/selectors/trainingSelector";
-import { getProgramSettings } from "../store/selectors/programSettingsSelector";
+import { selectTrainingSessions } from "../store/selectors/trainingSelector";
+import { selectProgramSettings } from "../store/selectors/programSettingsSelector";
 
 export function OverviewPage() {
   // mock data for now, will be replaced by live data in the future
@@ -16,8 +16,8 @@ export function OverviewPage() {
   const currentReadiness = useAppSelector(selectCurrentReadiness);
   const { latest7Logs } = useAppSelector(getPreCheckData);
   const latestLog = latest7Logs?.[0] ?? null;
-  const { trainingSessions } = useAppSelector(getTrainingData);
-  const { programSettings } = useAppSelector(getProgramSettings);
+  const trainingSessions = useAppSelector(selectTrainingSessions);
+  const programSettings = useAppSelector(selectProgramSettings);
 
   const derivedOverviewMetrics = getDerivedOverviewMetrics({
     trainingSessions,

@@ -10,8 +10,9 @@ import {
   selectCurrentReadiness,
 } from "../store/selectors/preCheckSelector";
 import { 
-  savePreCheckLogDraft, 
+  fetchTodayPreCheck,
   resetPreCheckDraft, 
+  savePreCheck,
   updatePreCheckDraft 
 } from "../store/slices/preCheckSlice";
 import { calculateReadiness } from "../domain/readiness";
@@ -36,7 +37,13 @@ export function PreCheckPage() {
     preCheckDraftUpdated,
     savedPreCheckLogs,
     latest7Logs,
+    status,
+    error,
   } = useAppSelector(getPreCheckData);
+
+  useEffect(() => {
+    void dispatch(fetchTodayPreCheck());
+  }, [dispatch]);
 
   useEffect(() => {
     try {
@@ -52,6 +59,25 @@ export function PreCheckPage() {
   const batteryRingStyle = {
     "--battery-score": `${readiness.score}%`,
   } as CSSProperties;
+  const isSaving = status === "saving";
+  const isLoading = status === "loading";
+  const hasBackendError = status === "error";
+  const backendBadgeStatus = hasBackendError
+    ? MetricStatus.Risk
+    : status === "success"
+      ? MetricStatus.Good
+      : isLoading || isSaving
+        ? MetricStatus.Watch
+        : MetricStatus.Neutral;
+  const backendStatusLabel = isLoading
+    ? "Loading backend"
+    : isSaving
+      ? "Saving..."
+      : hasBackendError
+        ? "Backend error"
+        : status === "success"
+          ? "Backend synced"
+          : "Local draft";
 
   return (
     <div className="page page-stack">
@@ -77,6 +103,10 @@ export function PreCheckPage() {
             <StatusBadge
               status={preCheckDraftUpdated ? MetricStatus.Watch : MetricStatus.Good}
               label={preCheckDraftUpdated ? "Draft updated" : "Draft saved"}
+            />
+            <StatusBadge
+              status={backendBadgeStatus}
+              label={backendStatusLabel}
             />
           </div>
 
@@ -109,16 +139,20 @@ export function PreCheckPage() {
             <StatusBadge status={MetricStatus.Good} label="Live calculation" />
             <button type="button" 
               className="button-dark" 
-              onClick={() => dispatch(savePreCheckLogDraft())} 
-              disabled={!preCheckDraftUpdated}
+              onClick={() => {
+                void dispatch(savePreCheck());
+              }} 
+              disabled={!preCheckDraftUpdated || isSaving}
             >
-              Save readiness check-in
+              {isSaving ? "Saving..." : "Save readiness check-in"}
             </button>
             <button type="button" className="button-dark" onClick={() => dispatch(resetPreCheckDraft())}>
               Reset inputs
             </button>
           </div>
         </div>
+
+        {error ? <p className="form-error" role="alert">{error}</p> : null}
 
         <div className="quick-control-grid">
           {readinessControls.map((control) => {
