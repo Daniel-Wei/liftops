@@ -11,5 +11,4 @@ public sealed record TrainingSessionDto(
     int Reps,
     decimal WeightKg,
     int? Rpe,
-    int? Rir,
-    string? Notes);
+    int? Rir);

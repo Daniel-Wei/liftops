@@ -16,8 +16,7 @@ import {
   deletePreCheck as deletePreCheckFromApi,
 } from "../../api/preCheckApi";
 import { fromPreCheckDto, toPreCheckDto } from "../../api/preCheckDtoMapping";
-
-type PreCheckRequestStatus = "idle" | "loading" | "saving" | "success" | "error";
+import { getErrorMessage, RequestStatus } from "./sliceHelpers";
 
 type UpdatePreCheckDetailsPayload = {
   field: keyof PreCheckDetailsLog;
@@ -28,17 +27,9 @@ type PreCheckState = {
   preCheckDraft: PreCheckDetailsLog;
   preCheckDraftUpdated: boolean;
   savedPreCheckLogs: PreCheckLog[];
-  status: PreCheckRequestStatus;
+  status: RequestStatus;
   error: string | null;
 };
-
-function getErrorMessage(error: unknown) {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return "Request failed. Please try again.";
-}
 
 function upsertPreCheckLog(logs: PreCheckLog[], nextLog: PreCheckLog) {
   const existingLogIndex = logs.findIndex((log) => log.date === nextLog.date);

@@ -2,12 +2,6 @@ import type { PreCheckDto } from "./dtos";
 import { initialPreCheckDetailsInput } from "../data/defaultValues";
 import type { PreCheckDetailsLog, PreCheckLog } from "../types/appTypes";
 import { getTodayDate } from "../helpers/GenericHelpers";
-import { isPreCheckInput } from "../types/appTypeChecks";
-
-type StoredPreCheckNote = {
-  source: "liftBattery.preCheck";
-  input: PreCheckDetailsLog;
-};
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -73,31 +67,6 @@ function getStressFromRestingHeartRateDelta(restingHeartRateDelta: number) {
   return 5;
 }
 
-function tryReadStoredInput(notes: string | undefined) {
-  if (!notes) {
-    return null;
-  }
-
-  try {
-    const parsedValue: unknown = JSON.parse(notes);
-
-    if (
-      typeof parsedValue === "object"
-      && parsedValue !== null
-      && "source" in parsedValue
-      && parsedValue.source === "liftBattery.preCheck"
-      && "input" in parsedValue
-      && isPreCheckInput(parsedValue.input)
-    ) {
-      return parsedValue.input;
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
-}
-
 function getDtoString(dto: PreCheckDto, camelKey: keyof PreCheckDto, pascalKey: string) {
   const dtoRecord = dto as unknown as Record<string, unknown>;
   const value = dtoRecord[camelKey] ?? dtoRecord[pascalKey];
@@ -111,11 +80,6 @@ function getDtoNumber(dto: PreCheckDto, camelKey: keyof PreCheckDto, pascalKey: 
 }
 
 export function toPreCheckDto(input: PreCheckDetailsLog, savedLog?: PreCheckLog): PreCheckDto {
-  const notes: StoredPreCheckNote = {
-    source: "liftBattery.preCheck",
-    input,
-  };
-
   return {
     id: savedLog?.id,
     date: getTodayDate(),
@@ -124,18 +88,15 @@ export function toPreCheckDto(input: PreCheckDetailsLog, savedLog?: PreCheckLog)
     stress: getStressFromRestingHeartRateDelta(input.restingHeartRateDelta),
     motivation: scaleTenToFive(input.motivation),
     energy: scaleTenToFive(input.motivation),
-    notes: JSON.stringify(notes),
   };
 }
 
 export function fromPreCheckDto(dto: PreCheckDto, fallbackInput = initialPreCheckDetailsInput): PreCheckLog {
   const dtoDate = getDtoString(dto, "date", "Date") ?? getTodayDate();
-  const dtoNotes = getDtoString(dto, "notes", "Notes");
   const dtoSleepQuality = getDtoNumber(dto, "sleepQuality", "SleepQuality") ?? 3;
   const dtoSoreness = getDtoNumber(dto, "soreness", "Soreness") ?? 3;
   const dtoMotivation = getDtoNumber(dto, "motivation", "Motivation") ?? 3;
-  const storedInput = tryReadStoredInput(dtoNotes);
-  const input = storedInput ?? {
+  const input = {
     sleepHours: getSleepHoursFromQuality(dtoSleepQuality),
     soreness: scaleFiveToTen(dtoSoreness),
     motivation: scaleFiveToTen(dtoMotivation),

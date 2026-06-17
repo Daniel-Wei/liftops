@@ -1,6 +1,7 @@
 import type {
   ProgramSettings,
   PreCheckDetailsLog,
+  TrainingSessionDetails,
 } from "../types/appTypes";
 
 export const defaultProgramSettings: ProgramSettings = {
@@ -18,4 +19,14 @@ export const initialPreCheckDetailsInput: PreCheckDetailsLog = {
   restingHeartRateDelta: 1,
   previousSessionRpe: 7,
   previousSessionDurationMinutes: 60,
+};
+
+export const initialTrainingSessionDetailsInput: TrainingSessionDetails = {
+  durationMinutes: 0,
+  exerciseName: "",
+  primaryMuscleGroup: "Chest",
+  reps: 0,
+  sessionRpe: 0,
+  sets: 0,
+  weightKg: 0,  
 };

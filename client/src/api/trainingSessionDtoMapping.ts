@@ -14,41 +14,38 @@ function getDtoNumber(dto: TrainingSessionDto, camelKey: keyof TrainingSessionDt
   return typeof value === "number" ? value : undefined;
 }
 
-export function toTrainingDto(input: TrainingSessionDetails, savedSession?: TrainingSession): TrainingSessionDto {
+export function toTrainingSessionDto(input: TrainingSessionDetails): TrainingSessionDto {
+
   return {
-    id: savedSession?.id,
-    date: savedSession?.date ?? getTodayDate(),
+    date: input.date,
     durationMinutes: input.durationMinutes,
     sessionRpe: input.sessionRpe,
     exerciseName: input.exerciseName,
-    muscleGroup: input.muscleGroup,
+    muscleGroup: input.primaryMuscleGroup,
     reps: input.reps,
     sets: input.sets,
     weightKg: input.weightKg,
     rir: input.rir,
     rpe: input.rpe,
-    notes: input.notes,
   };
 }
 
 export function fromTrainingDto(dto: TrainingSessionDto): TrainingSession {
   const dtoDate = getDtoString(dto, "date", "Date") ?? getTodayDate();
-  const dtoNotes = getDtoString(dto, "notes", "Notes");
 
   return {
     id: getDtoString(dto, "id", "Id") ?? `trainingSession-${dtoDate}`,
-    date: dtoDate,
-    details: {
+    traingSessionDetails: {
+      date: dtoDate,
       durationMinutes: getDtoNumber(dto, "durationMinutes", "DurationMinutes") ?? 0,
       sessionRpe: getDtoNumber(dto, "sessionRpe", "SessionRpe") ?? 0,
       exerciseName: getDtoString(dto, "exerciseName", "ExerciseName") ?? "",
-      muscleGroup: dto.muscleGroup,
+      primaryMuscleGroup: dto.muscleGroup,
+      sets: dto.sets,
       reps: getDtoNumber(dto, "reps", "Reps") ?? 0,
-      rpe: getDtoNumber(dto, "rpe", "Rpe"),
-      sets: getDtoNumber(dto, "sets", "Sets") ?? 0,
       weightKg: getDtoNumber(dto, "weightKg", "WeightKg") ?? 0,
+      rpe: getDtoNumber(dto, "rpe", "Rpe"),
       rir: getDtoNumber(dto, "rir", "Rir"),
-      notes: dtoNotes,
-    },
+    }
   };
 }

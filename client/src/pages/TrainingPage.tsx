@@ -207,20 +207,24 @@ export function TrainingPage() {
     const weightKg = Number(trainingForm.weightKg);
     const rpe = getOptionalNumber(trainingForm.setRpe);
     const rir = getOptionalNumber(trainingForm.rir);
+    const now = new Date().toISOString();
     const session: TrainingSession = {
       id: createId("session"),
       date: trainingForm.date,
-      details: {
-        durationMinutes,
-        sessionRpe,
-        exerciseName: trainingForm.exerciseName.trim(),
-        primaryMuscleGroup: trainingForm.primaryMuscleGroup,
-        sets,
+      durationMinutes,
+      sessionRpe,
+      exerciseName: trainingForm.exerciseName.trim(),
+      primaryMuscleGroup: trainingForm.primaryMuscleGroup,
+      sets: Array.from({ length: sets }, () => ({
+        id: createId("set"),
+        reps,
         weightKg,
         rpe,
         rir,
-        reps
-      }
+        isWarmup: false,
+      })),
+      createdAt: now,
+      updatedAt: now,
     };
 
     dispatch(saveTrainingSession(session));

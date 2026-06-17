@@ -27,7 +27,6 @@ public static class PreCheckMapping
             dto.Soreness,
             dto.Stress,
             dto.Motivation,
-            dto.Energy,
-            dto.Notes);
+            dto.Energy);
     }
 }

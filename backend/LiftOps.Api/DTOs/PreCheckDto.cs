@@ -7,5 +7,4 @@ public sealed record PreCheckDto(
     int Soreness,
     int Stress,
     int Motivation,
-    int Energy,
-    string? Notes);
+    int Energy);

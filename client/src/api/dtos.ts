@@ -8,7 +8,6 @@ export type PreCheckDto = {
   stress: number;
   motivation: number;
   energy: number;
-  notes?: string;
 };
 
 export type TrainingSessionDto = {
@@ -23,5 +22,4 @@ export type TrainingSessionDto = {
   rpe?: number;
   rir?: number;
   sets: number;
-  notes?: string;
 };

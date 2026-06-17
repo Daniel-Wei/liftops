@@ -7,5 +7,4 @@ public sealed record PreCheckLog(
     int Soreness,
     int Stress,
     int Motivation,
-    int Energy,
-    string? Notes);
+    int Energy);
