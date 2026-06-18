@@ -12,30 +12,55 @@ public static class TrainingSessionMapping
             log.Date.ToString("yyyy-MM-dd"),
             log.DurationMinutes,
             log.SessionRpe,
-            log.MuscleGroup,
-            log.ExerciseName,
-            log.Sets,
-            log.Reps,
-            log.WeightKg,
-            log.Rpe,
-            log.Rir,
-            log.Notes);
+            log.Sets.Select(ToDto).ToList(),
+            log.CreatedAt.ToString("O"),
+            log.UpdatedAt.ToString("O"));
     }
 
     public static TrainingSession ToModel(TrainingSessionDto dto)
     {
+        var now = DateTimeOffset.UtcNow;
+
         return new TrainingSession(
             dto.Id ?? Guid.NewGuid().ToString("N"),
             DateOnly.Parse(dto.Date),
             dto.DurationMinutes,
             dto.SessionRpe,
-            dto.MuscleGroup,
+            dto.Sets.Select(ToModel).ToList(),
+            TryParseDateTimeOffset(dto.CreatedAt) ?? now,
+            now);
+    }
+
+    private static TrainingSetEntryDto ToDto(TrainingSetEntry set)
+    {
+        return new TrainingSetEntryDto(
+            set.Id,
+            set.ExerciseName,
+            set.MuscleGroup,
+            set.Reps,
+            set.WeightKg,
+            set.Rpe,
+            set.Rir,
+            set.IsWarmup);
+    }
+
+    private static TrainingSetEntry ToModel(TrainingSetEntryDto dto)
+    {
+        return new TrainingSetEntry(
+            dto.Id ?? Guid.NewGuid().ToString("N"),
             dto.ExerciseName,
-            dto.Sets,
+            dto.MuscleGroup,
             dto.Reps,
             dto.WeightKg,
             dto.Rpe,
             dto.Rir,
-            dto.Notes);
+            dto.IsWarmup);
+    }
+
+    private static DateTimeOffset? TryParseDateTimeOffset(string? value)
+    {
+        return DateTimeOffset.TryParse(value, out var dateTimeOffset)
+            ? dateTimeOffset
+            : null;
     }
 }

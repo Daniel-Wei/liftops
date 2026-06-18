@@ -14,8 +14,7 @@ public static class PreCheckMapping
             log.Soreness,
             log.Stress,
             log.Motivation,
-            log.Energy,
-            log.Notes);
+            log.Energy);
     }
 
     public static PreCheckLog ToModel(PreCheckDto dto)

@@ -56,11 +56,9 @@ function getTrainingSessionFromStorage(value: unknown): TrainingSession | null {
     || !isString(value.date)
     || !isNumber(value.durationMinutes)
     || !isNumber(value.sessionRpe)
-    || !isString(value.exerciseName)
     || !isSetArray(value.sets)
     || !isString(value.createdAt)
     || !isString(value.updatedAt)
-    || !isMuscleGroup(value.primaryMuscleGroup)
   ) {
     return null;
   }
@@ -70,8 +68,6 @@ function getTrainingSessionFromStorage(value: unknown): TrainingSession | null {
     date: value.date,
     durationMinutes: value.durationMinutes,
     sessionRpe: value.sessionRpe,
-    exerciseName: value.exerciseName,
-    primaryMuscleGroup: value.primaryMuscleGroup,
     sets: value.sets,
     createdAt: value.createdAt,
     updatedAt: value.updatedAt,

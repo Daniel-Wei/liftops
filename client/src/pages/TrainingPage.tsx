@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { MetricCard } from "../components/MetricCard";
 import { SectionCard } from "../components/SectionCard";
 import { StatusBadge } from "../components/StatusBadge";
@@ -11,56 +11,68 @@ import {
 import {
   MetricStatus,
   type MuscleGroup,
-  type TrainingSession,
-  type TrainingSessionForm,
   type MuscleGroupFilter,
 } from "../types/appTypes";
 import {
-    createDefaultTrainingSessionForm,
-    getSessionExerciseName,
-    getSessionLoad,
-    getSessionSetCount,
-    getTrainingFormError,
-    doesSessionMatchMuscleGroup,
-    sortTrainingSessionsNewestFirst,
-    buildRealTrainingMetrics,
-    getPriorityMuscleSummaries,
+  buildRealTrainingMetrics,
+  doesSessionMatchMuscleGroup,
+  getTrainingDayGroups,
+  getTrainingFormError,
+  getPriorityMuscleSummaries,
+  sortTrainingSessionsNewestFirst,
+  type TrainingDayGroup,
 } from "../helpers/TrainingPageHelpers";
-import { 
-  formatWholeNumber, 
-  getOptionalNumber, 
-  createId } 
-  from "../helpers/GenericHelpers";
-import { 
-  muscleGroupOptions, 
-  savedSessionPageSizeOptions 
+import {
+  formatWholeNumber,
+  getOptionalNumber,
+} from "../helpers/GenericHelpers";
+import {
+  getDefaultExerciseForMuscleGroup,
+  getExerciseOptionsForMuscleGroup,
+  muscleGroupOptions,
+  savedSessionPageSizeOptions,
 } from "../data/programValues";
-
-import { TrainingSessionTextField } from "../types/appTypes";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { deleteTrainingSession, saveTrainingSession } from "../store/slices/trainingSlice";
+import {
+  deleteTrainingSession,
+  fetchTrainingSessions,
+  saveTrainingSession,
+  updateTrainingSessionDraft,
+} from "../store/slices/trainingSlice";
 import { selectProgramSettings } from "../store/selectors/programSettingsSelector";
-import { selectTrainingSessions } from "../store/selectors/trainingSelector";
+import { getTrainingData, selectTrainingSessions } from "../store/selectors/trainingSelector";
 import { TRAINING_SESSIONS_STORAGE_KEY } from "../data/localStorageKeys";
 
-export function TrainingPage() {
- const dispatch = useAppDispatch();
- const programSettings = useAppSelector(selectProgramSettings);
- const trainingSessions = useAppSelector(selectTrainingSessions);
-  // #region: states
+function formatDisplayDate(date: string) {
+  const [year, month, day] = date.split("-");
 
-  // #region: training session form states
-  const defaultPrimaryMuscleGroup = programSettings.priorityMuscles[0] ?? "Back";
+  if (!year || !month || !day) {
+    return date;
+  }
 
-  const [trainingForm, setTrainingForm] = useState<TrainingSessionForm>(() => (
-    createDefaultTrainingSessionForm(defaultPrimaryMuscleGroup)
+  return `${day}/${month}/${year}`;
+}
+
+function getTrainingDayExerciseLabel(dayGroup: TrainingDayGroup) {
+  const exerciseNames = dayGroup.muscles.flatMap((muscleGroup) => (
+    muscleGroup.exercises.map((exercise) => exercise.exerciseName)
   ));
+
+  if (exerciseNames.length === 0) {
+    return "No exercise";
+  }
+
+  return exerciseNames.length === 1 ? exerciseNames[0] : `${exerciseNames.length} exercises`;
+}
+
+export function TrainingPage() {
+  const dispatch = useAppDispatch();
+  const programSettings = useAppSelector(selectProgramSettings);
+  const trainingSessions = useAppSelector(selectTrainingSessions);
+  const { trainingSessionDraft, error, status } = useAppSelector(getTrainingData);
   const [formError, setFormError] = useState("");
-  // #endregion
 
-  // #region: saved session filter states
   const [selectedMuscleGroupFilter, setSelectedMuscleGroupFilter] = useState<MuscleGroupFilter>("All");
-
   const trainingTrendWeeks = getTrainingTrendWeeks();
   const [selectedWeekLabel, setSelectedWeekLabel] = useState(() => (
     getCurrentTrainingTrendWeek().label
@@ -70,24 +82,15 @@ export function TrainingPage() {
 
   const [savedSessionPageSize, setSavedSessionPageSize] = useState(5);
   const [savedSessionPage, setSavedSessionPage] = useState(1);
-  // #endregion
+  const [collapsedTrainingGroupKeys, setCollapsedTrainingGroupKeys] = useState<Set<string>>(() => new Set());
 
-  // #endregion
+  useEffect(() => {
+    void dispatch(fetchTrainingSessions({
+      from: selectedWeek.startDate,
+      to: selectedWeek.endDate,
+    }));
+  }, [dispatch, selectedWeek.startDate, selectedWeek.endDate]);
 
-  // #region: sorted and filtered saved training sessions: for current training week and muscle group filter
-  const weekTrainingSessions = trainingSessions.filter((session) => (
-    isSessionInTrainingTrendWeek(session, selectedWeek)
-  ));
-  const filteredTrainingSessions = weekTrainingSessions.filter((session) => (
-    doesSessionMatchMuscleGroup(session, selectedMuscleGroupFilter)
-  ));
-  const sortedFilteredTrainingSessions = sortTrainingSessionsNewestFirst(filteredTrainingSessions);
-  const selectedWeekDisplayLabel = formatTrainingTrendWeekLabel(selectedWeek);
-  const latestSession = sortedFilteredTrainingSessions[0] ?? null;
-
-  // #endregion
-
-  // #region: persistence for saved training sessions
   useEffect(() => {
     try {
       localStorage.setItem(
@@ -99,39 +102,37 @@ export function TrainingPage() {
     }
   }, [trainingSessions]);
 
-  // #endregion
-
-  // #region: pagination for saved sessions: calculate total pages and slice the filtered sessions to only show the current page
+  const weekTrainingSessions = trainingSessions.filter((session) => (
+    isSessionInTrainingTrendWeek(session, selectedWeek)
+  ));
+  const filteredTrainingSessions = weekTrainingSessions.filter((session) => (
+    doesSessionMatchMuscleGroup(session, selectedMuscleGroupFilter)
+  ));
+  const sortedFilteredTrainingSessions = sortTrainingSessionsNewestFirst(filteredTrainingSessions);
+  const selectedWeekDisplayLabel = formatTrainingTrendWeekLabel(selectedWeek);
+  const trainingDayGroups = getTrainingDayGroups(sortedFilteredTrainingSessions);
+  const latestTrainingDay = trainingDayGroups[0] ?? null;
 
   const totalSavedSessionPages = Math.max(
     1,
-    Math.ceil(sortedFilteredTrainingSessions.length / savedSessionPageSize),
+    Math.ceil(trainingDayGroups.length / savedSessionPageSize),
   );
-
   const visibleSavedSessionPage = Math.min(savedSessionPage, totalSavedSessionPages);
   const savedSessionStartIndex = (visibleSavedSessionPage - 1) * savedSessionPageSize;
-
-  const latestTrainingSessions = sortedFilteredTrainingSessions.slice(
+  const visibleTrainingDayGroups = trainingDayGroups.slice(
     savedSessionStartIndex,
     savedSessionStartIndex + savedSessionPageSize,
   );
 
-  // #endregion
-
-  // #region: derive training metrics and summaries from the filtered sessions for the current training week and muscle group filter
-  
   const realTrainingMetrics = buildRealTrainingMetrics(sortedFilteredTrainingSessions);
   const mainSessionLoadMetric = realTrainingMetrics[0];
   const secondaryTrainingMetrics = realTrainingMetrics.slice(1);
-
   const priorityMuscleSummaries = getPriorityMuscleSummaries(
     sortedFilteredTrainingSessions,
     programSettings.priorityMuscles,
   );
-
-  // #endregion
-
-  // #region: event handlers
+  const selectedExerciseOptions = getExerciseOptionsForMuscleGroup(trainingSessionDraft.primaryMuscleGroup);
+  const isSaving = status === "saving";
 
   function handleTrainingWeekChange(value: string) {
     const selectedWeekOption = trainingTrendWeeks.find((week) => week.label === value);
@@ -160,82 +161,64 @@ export function TrainingPage() {
   }
 
   function handleSavedSessionPageSizeChange(value: number) {
-    const nextPageSize = Number(value);
-    
-    if (savedSessionPageSizeOptions.includes(nextPageSize)) {
-      setSavedSessionPageSize(nextPageSize);
+    if (savedSessionPageSizeOptions.includes(value)) {
+      setSavedSessionPageSize(value);
       setSavedSessionPage(1);
     }
   }
 
-  function updateTrainingFormTextField(field: TrainingSessionTextField, value: string) {
-    setTrainingForm((currentForm) => ({
-      ...currentForm,
-      [field]: value,
-    }));
-  }
+  function handlePrimaryMuscleGroupDraftChange(value: MuscleGroup) {
+    const selectedMuscleGroup = muscleGroupOptions.find((muscleGroup) => muscleGroup === value);
 
-  function updatePrimaryMuscleGroup(value: MuscleGroup) {
-    setTrainingForm((currentForm) => ({
-      ...currentForm,
-      primaryMuscleGroup: value,
-    }));
-  }
-
-  function handlePrimaryMuscleGroupChange(value: MuscleGroup) {
-    const selectedMuscleGroup = muscleGroupOptions.find((muscleGroup) => (
-      muscleGroup === value
-    ));
-
-    if (selectedMuscleGroup) {
-      updatePrimaryMuscleGroup(selectedMuscleGroup);
+    if (!selectedMuscleGroup) {
+      return;
     }
+
+    dispatch(updateTrainingSessionDraft({ field: "primaryMuscleGroup", value: selectedMuscleGroup }));
+    dispatch(updateTrainingSessionDraft({
+      field: "exerciseName",
+      value: getDefaultExerciseForMuscleGroup(selectedMuscleGroup),
+    }));
   }
 
   function handleSaveTrainingSession() {
-    const nextError = getTrainingFormError(trainingForm);
+    const nextError = getTrainingFormError(trainingSessionDraft);
 
     if (nextError !== null) {
       setFormError(nextError);
       return;
     }
 
-    const durationMinutes = Number(trainingForm.durationMinutes);
-    const sessionRpe = Number(trainingForm.sessionRpe);
-    const sets = Number(trainingForm.setsCount);
-    const reps = Number(trainingForm.reps);
-    const weightKg = Number(trainingForm.weightKg);
-    const rpe = getOptionalNumber(trainingForm.setRpe);
-    const rir = getOptionalNumber(trainingForm.rir);
-    const now = new Date().toISOString();
-    const session: TrainingSession = {
-      id: createId("session"),
-      date: trainingForm.date,
-      durationMinutes,
-      sessionRpe,
-      exerciseName: trainingForm.exerciseName.trim(),
-      primaryMuscleGroup: trainingForm.primaryMuscleGroup,
-      sets: Array.from({ length: sets }, () => ({
-        id: createId("set"),
-        reps,
-        weightKg,
-        rpe,
-        rir,
-        isWarmup: false,
-      })),
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    dispatch(saveTrainingSession(session));
     setFormError("");
+    void dispatch(saveTrainingSession());
   }
 
-  // #endregion
+  function handleDeleteSessionIds(sessionIds: string[]) {
+    sessionIds.forEach((sessionId) => {
+      void dispatch(deleteTrainingSession(sessionId));
+    });
+  }
+
+  function isTrainingGroupCollapsed(groupKey: string) {
+    return collapsedTrainingGroupKeys.has(groupKey);
+  }
+
+  function toggleTrainingGroup(groupKey: string) {
+    setCollapsedTrainingGroupKeys((currentKeys) => {
+      const nextKeys = new Set(currentKeys);
+
+      if (nextKeys.has(groupKey)) {
+        nextKeys.delete(groupKey);
+      } else {
+        nextKeys.add(groupKey);
+      }
+
+      return nextKeys;
+    });
+  }
 
   return (
     <div className="page page-stack">
-      {/* Main output: the highest-level training signal from the latest saved session. */}
       <header className="dashboard-hero">
         <div className="dashboard-title-row">
           <div>
@@ -251,24 +234,24 @@ export function TrainingPage() {
           <div className="battery-panel-badges">
             <StatusBadge status={mainSessionLoadMetric.status} label={mainSessionLoadMetric.evidenceType} />
             <StatusBadge status={MetricStatus.Neutral} label={selectedWeekDisplayLabel} />
-            <StatusBadge status={MetricStatus.Neutral} label={`${filteredTrainingSessions.length} saved sessions`} />
+            <StatusBadge status={MetricStatus.Neutral} label={`${trainingDayGroups.length} training days`} />
           </div>
 
           <div className="training-load-summary">
             <p className="battery-focus-eyebrow">Latest training output / 最近训练输出</p>
             <div className="training-load-detail-row">
               <p className="training-load-exercise">
-                {latestSession ? getSessionExerciseName(latestSession) : "No saved session"}
+                {latestTrainingDay ? getTrainingDayExerciseLabel(latestTrainingDay) : "No saved session"}
               </p>
-              {latestSession && 
-                 <p className="training-load-value">
+              {latestTrainingDay ? (
+                <p className="training-load-value">
                   {mainSessionLoadMetric.value}
                 </p>
-              }
+              ) : null}
               <div className="training-load-copy">
                 <p className="battery-focus-detail">
-                  {latestSession
-                    ? `${latestSession.date} - RPE ${latestSession.sessionRpe} - ${latestSession.durationMinutes} min`
+                  {latestTrainingDay
+                    ? `${formatDisplayDate(latestTrainingDay.date)} - RPE ${latestTrainingDay.sessionRpe} - ${latestTrainingDay.setCount} sets (${latestTrainingDay.workingSetCount} working)`
                     : "Save one completed session below."}
                 </p>
               </div>
@@ -279,13 +262,13 @@ export function TrainingPage() {
             <div>
               <p className="battery-meta-label">Session RPE</p>
               <p className="battery-meta-value">
-                {latestSession ? `${latestSession.sessionRpe} / 10` : "--"}
+                {latestTrainingDay ? `${latestTrainingDay.sessionRpe} / 10` : "--"}
               </p>
             </div>
             <div>
-              <p className="battery-meta-label">Duration</p>
+              <p className="battery-meta-label">Working sets</p>
               <p className="battery-meta-value">
-                {latestSession ? `${latestSession.durationMinutes} min` : "--"}
+                {latestTrainingDay ? `${latestTrainingDay.workingSetCount}` : "--"}
               </p>
             </div>
             <div>
@@ -296,19 +279,16 @@ export function TrainingPage() {
         </div>
       </header>
 
-      {/* Secondary metrics: still real data, but less important than the main session-load readout. */}
       <section className="metric-grid">
         {secondaryTrainingMetrics.map((metric) => (
           <MetricCard key={metric.label} metric={metric} />
         ))}
       </section>
 
-      {/* Input section: saves one real post-workout session into TrainingLogContext. */}
-      <SectionCard title="Save training session" titleZh="保存训练记录" eyebrow="Post-workout log">
+      <SectionCard title="Save training exercise" titleZh="保存训练动作" eyebrow="Post-workout log">
         <div className="training-session-intro">
           <p className="body-text">
-            Save one completed exercise after training. This feeds session load and hard-set
-            context without becoming a full workout builder yet.
+            Add completed exercise sets. Total training duration is recorded only in Pre-check.
           </p>
           <StatusBadge
             status={MetricStatus.Neutral}
@@ -322,42 +302,36 @@ export function TrainingPage() {
             <input
               className="training-input"
               type="date"
-              value={trainingForm.date}
-              onChange={(event) => updateTrainingFormTextField("date", event.target.value)}
+              value={trainingSessionDraft.date}
+              onChange={(event) => dispatch(updateTrainingSessionDraft({ field: "date", value: event.target.value }))}
             />
           </label>
 
           <label className="training-form-field">
-            <span className="training-form-label">Duration minutes / 训练时长</span>
-            <input
+            <span className="training-form-label">Set type / 组类型</span>
+            <select
               className="training-input"
-              type="number"
-              min="1"
-              value={trainingForm.durationMinutes}
-              onChange={(event) => updateTrainingFormTextField("durationMinutes", event.target.value)}
-            />
+              value={trainingSessionDraft.isWarmup ? "warmup" : "working"}
+              onChange={(event) => dispatch(updateTrainingSessionDraft({
+                field: "isWarmup",
+                value: event.target.value === "warmup",
+              }))}
+            >
+              <option value="working">Working set</option>
+              <option value="warmup">Warm-up</option>
+            </select>
           </label>
 
           <label className="training-form-field">
-            <span className="training-form-label">Session RPE / 训练难度</span>
+            <span className="training-form-label">Training day RPE / 训练总体难度</span>
             <input
               className="training-input"
               type="number"
               min="1"
               max="10"
               step="0.5"
-              value={trainingForm.sessionRpe}
-              onChange={(event) => updateTrainingFormTextField("sessionRpe", event.target.value)}
-            />
-          </label>
-
-          <label className="training-form-field">
-            <span className="training-form-label">Exercise / 动作</span>
-            <input
-              className="training-input"
-              type="text"
-              value={trainingForm.exerciseName}
-              onChange={(event) => updateTrainingFormTextField("exerciseName", event.target.value)}
+              value={trainingSessionDraft.sessionRpe}
+              onChange={(event) => dispatch(updateTrainingSessionDraft({ field: "sessionRpe", value: Number(event.target.value) }))}
             />
           </label>
 
@@ -365,11 +339,24 @@ export function TrainingPage() {
             <span className="training-form-label">Primary muscle / 主要肌群</span>
             <select
               className="training-input"
-              value={trainingForm.primaryMuscleGroup}
-              onChange={(event) => handlePrimaryMuscleGroupChange(event.target.value as MuscleGroup)}
+              value={trainingSessionDraft.primaryMuscleGroup}
+              onChange={(event) => handlePrimaryMuscleGroupDraftChange(event.target.value as MuscleGroup)}
             >
               {muscleGroupOptions.map((muscleGroup) => (
                 <option key={muscleGroup} value={muscleGroup}>{muscleGroup}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="training-form-field">
+            <span className="training-form-label">Exercise / 动作</span>
+            <select
+              className="training-input"
+              value={trainingSessionDraft.exerciseName}
+              onChange={(event) => dispatch(updateTrainingSessionDraft({ field: "exerciseName", value: event.target.value }))}
+            >
+              {selectedExerciseOptions.map((exerciseName) => (
+                <option key={exerciseName} value={exerciseName}>{exerciseName}</option>
               ))}
             </select>
           </label>
@@ -381,8 +368,8 @@ export function TrainingPage() {
               type="number"
               min="1"
               step="1"
-              value={trainingForm.setsCount}
-              onChange={(event) => updateTrainingFormTextField("setsCount", event.target.value)}
+              value={trainingSessionDraft.sets}
+              onChange={(event) => dispatch(updateTrainingSessionDraft({ field: "sets", value: Number(event.target.value) }))}
             />
           </label>
 
@@ -392,8 +379,8 @@ export function TrainingPage() {
               className="training-input"
               type="number"
               min="1"
-              value={trainingForm.reps}
-              onChange={(event) => updateTrainingFormTextField("reps", event.target.value)}
+              value={trainingSessionDraft.reps}
+              onChange={(event) => dispatch(updateTrainingSessionDraft({ field: "reps", value: Number(event.target.value) }))}
             />
           </label>
 
@@ -404,8 +391,8 @@ export function TrainingPage() {
               type="number"
               min="0"
               step="0.5"
-              value={trainingForm.weightKg}
-              onChange={(event) => updateTrainingFormTextField("weightKg", event.target.value)}
+              value={trainingSessionDraft.weightKg}
+              onChange={(event) => dispatch(updateTrainingSessionDraft({ field: "weightKg", value: Number(event.target.value) }))}
             />
           </label>
 
@@ -417,8 +404,8 @@ export function TrainingPage() {
               min="1"
               max="10"
               step="0.5"
-              value={trainingForm.setRpe}
-              onChange={(event) => updateTrainingFormTextField("setRpe", event.target.value)}
+              value={trainingSessionDraft.rpe ?? ""}
+              onChange={(event) => dispatch(updateTrainingSessionDraft({ field: "rpe", value: getOptionalNumber(event.target.value) }))}
             />
           </label>
 
@@ -429,25 +416,26 @@ export function TrainingPage() {
               type="number"
               min="0"
               step="0.5"
-              value={trainingForm.rir}
-              onChange={(event) => updateTrainingFormTextField("rir", event.target.value)}
+              value={trainingSessionDraft.rir ?? ""}
+              onChange={(event) => dispatch(updateTrainingSessionDraft({ field: "rir", value: getOptionalNumber(event.target.value) }))}
             />
           </label>
         </div>
 
         <div className="training-form-actions">
-          <button type="button" className="button-dark" onClick={handleSaveTrainingSession}>
-            Save session
+          <button type="button" className="button-dark" onClick={handleSaveTrainingSession} disabled={isSaving}>
+            {isSaving ? "Saving..." : "Save exercise"}
           </button>
           {formError ? <p className="form-error" role="alert">{formError}</p> : null}
+          {error ? <p className="form-error" role="alert">{error}</p> : null}
         </div>
 
         <div className="saved-session-block">
           <div className="saved-session-header">
             <div>
-              <p className="section-eyebrow">Saved sessions</p>
+              <p className="section-eyebrow">Saved training days</p>
               <p className="muted-text">
-                Filtered by training week and muscle group so the page does not grow forever.
+                Sets saved on the same date are grouped into one training day, then grouped by muscle and exercise.
               </p>
             </div>
 
@@ -496,32 +484,106 @@ export function TrainingPage() {
             </div>
           </div>
 
-          <div className="compact-card-list">
-            {latestTrainingSessions.length === 0 ? (
-              <p className="muted-text">No matching saved training sessions in this week.</p>
-            ) : latestTrainingSessions.map((session) => (
-              <article key={session.id} className="compact-signal-card saved-session-card">
-                <div>
-                  <p className="work-title">{getSessionExerciseName(session)}</p>
-                  <p className="info-subtitle">
-                    {session.date} - RPE {session.sessionRpe} - {session.durationMinutes} min
-                  </p>
-                </div>
-                <div className="saved-session-actions">
-                  <span className="signal-chip">{getSessionLoad(session)} AU</span>
-                  <span className="signal-chip signal-chip--muted">
-                    {getSessionSetCount(session)} sets
-                  </span>
-                  <button
-                    type="button"
-                    className="text-button"
-                    onClick={() => dispatch(deleteTrainingSession(session.id))}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </article>
-            ))}
+          <div className="training-group-table-wrap">
+            {visibleTrainingDayGroups.length === 0 ? (
+              <p className="muted-text">No matching saved training days in this week.</p>
+            ) : (
+              <table className="training-group-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Exercise</th>
+                    <th scope="col">Sets</th>
+                    <th scope="col">Working sets</th>
+                    <th scope="col">Hard sets</th>
+                    <th scope="col">Total volume</th>
+                    <th scope="col">Working volume</th>
+                    <th scope="col">Action</th>
+                  </tr>
+                </thead>
+                {visibleTrainingDayGroups.map((dayGroup) => {
+                  const dayGroupKey = `day:${dayGroup.date}`;
+                  const isDayCollapsed = isTrainingGroupCollapsed(dayGroupKey);
+
+                  return (
+                    <tbody key={dayGroup.date}>
+                      <tr className="training-group-row training-group-row--day">
+                        <th scope="rowgroup" colSpan={7}>
+                          <div className="training-group-heading">
+                            <button
+                              type="button"
+                              className="training-group-toggle-button"
+                              aria-expanded={!isDayCollapsed}
+                              onClick={() => toggleTrainingGroup(dayGroupKey)}
+                            >
+                              <span className="training-group-toggle" aria-hidden="true">
+                                {isDayCollapsed ? "▸" : "▾"}
+                              </span>
+                              <span className="training-group-title">Date: {formatDisplayDate(dayGroup.date)}</span>
+                            </button>
+                            <span className="training-group-summary">
+                              RPE {dayGroup.sessionRpe} - {dayGroup.setCount} sets - {dayGroup.workingSetCount} working - {dayGroup.hardSetCount} hard - {formatWholeNumber(dayGroup.volumeLoad)} kg total - {formatWholeNumber(dayGroup.workingVolumeLoad)} kg working
+                            </span>
+                            <span className="signal-chip">{dayGroup.workingSetCount} working</span>
+                          </div>
+                        </th>
+                      </tr>
+
+                      {!isDayCollapsed ? dayGroup.muscles.map((muscleGroup) => {
+                        const muscleGroupKey = `muscle:${dayGroup.date}:${muscleGroup.muscleGroup}`;
+                        const isMuscleCollapsed = isTrainingGroupCollapsed(muscleGroupKey);
+
+                        return (
+                          <Fragment key={muscleGroupKey}>
+                            <tr className="training-group-row training-group-row--muscle">
+                              <th scope="rowgroup" colSpan={7}>
+                                <div className="training-group-heading">
+                                  <button
+                                    type="button"
+                                    className="training-group-toggle-button"
+                                    aria-expanded={!isMuscleCollapsed}
+                                    onClick={() => toggleTrainingGroup(muscleGroupKey)}
+                                  >
+                                    <span className="training-group-toggle" aria-hidden="true">
+                                      {isMuscleCollapsed ? "▸" : "▾"}
+                                    </span>
+                                    <span className="training-group-title">Muscle: {muscleGroup.muscleGroup}</span>
+                                  </button>
+                                  <span className="training-group-summary">
+                                    {muscleGroup.setCount} sets - {muscleGroup.workingSetCount} working - {muscleGroup.hardSetCount} hard - {formatWholeNumber(muscleGroup.volumeLoad)} kg total - {formatWholeNumber(muscleGroup.workingVolumeLoad)} kg working
+                                  </span>
+                                </div>
+                              </th>
+                            </tr>
+
+                            {!isMuscleCollapsed ? muscleGroup.exercises.map((exercise) => (
+                              <tr key={exercise.key} className="training-group-row training-group-row--exercise">
+                                <td>
+                                  <span className="training-exercise-name">{exercise.exerciseName}</span>
+                                </td>
+                                <td>{exercise.setCount}</td>
+                                <td>{exercise.workingSetCount}</td>
+                                <td>{exercise.hardSetCount}</td>
+                                <td>{formatWholeNumber(exercise.volumeLoad)} kg</td>
+                                <td>{formatWholeNumber(exercise.workingVolumeLoad)} kg</td>
+                                <td>
+                                  <button
+                                    type="button"
+                                    className="text-button"
+                                    onClick={() => handleDeleteSessionIds(exercise.sessionIds)}
+                                  >
+                                    Delete
+                                  </button>
+                                </td>
+                              </tr>
+                            )) : null}
+                          </Fragment>
+                        );
+                      }) : null}
+                    </tbody>
+                  );
+                })}
+              </table>
+            )}
           </div>
 
           <div className="saved-session-pagination">
@@ -548,7 +610,6 @@ export function TrainingPage() {
         </div>
       </SectionCard>
 
-      {/* Analysis sections only appear after saved training data exists. */}
       {filteredTrainingSessions.length > 0 ? (
         <SectionCard title="Priority muscle work" titleZh="重点肌群训练" eyebrow="From saved sets">
           <div className="compact-card-list">
@@ -576,7 +637,6 @@ export function TrainingPage() {
           </p>
         </SectionCard>
       )}
-
     </div>
   );
 }

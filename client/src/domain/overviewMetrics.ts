@@ -97,11 +97,11 @@ export function getPriorityHardSetCount(
   priorityMuscles: MuscleGroup[],
 ) {
   return trainingSessions.reduce((sessionTotal, session) => {
-    if (!priorityMuscles.includes(session.primaryMuscleGroup)) {
-      return sessionTotal;
-    }
+    const prioritySets = session.sets.filter((set) => (
+      priorityMuscles.includes(set.muscleGroup)
+    ));
 
-    return sessionTotal + session.sets.filter(isHardSet).length;
+    return sessionTotal + prioritySets.filter(isHardSet).length;
   }, 0);
 }
 

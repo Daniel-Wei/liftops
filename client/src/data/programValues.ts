@@ -79,4 +79,110 @@ export const muscleGroupOptions: MuscleGroup[] = [
   "Abs",
 ];
 
+export const exerciseOptionsByMuscleGroup: Record<Exclude<MuscleGroup, "All">, string[]> = {
+  Chest: [
+    "Bench Press",
+    "Incline Bench Press",
+    "Dumbbell Bench Press",
+    "Dumbbell Incline Press",
+    "Chest Press",
+    "Cable Fly",
+    "Pec Deck",
+    "Push-up",
+    "Dip",
+  ],
+  Back: [
+    "Pull-up",
+    "Lat Pulldown",
+    "Barbell Row",
+    "Dumbbell Row",
+    "Seated Cable Row",
+    "Chest Supported Row",
+    "T-Bar Row",
+    "Deadlift",
+    "Straight-arm Pulldown",
+  ],
+  Shoulders: [
+    "Overhead Press",
+    "Dumbbell Shoulder Press",
+    "Lateral Raise",
+    "Cable Lateral Raise",
+    "Rear Delt Fly",
+    "Face Pull",
+    "Arnold Press",
+    "Upright Row",
+  ],
+  Biceps: [
+    "Barbell Curl",
+    "Dumbbell Curl",
+    "Incline Dumbbell Curl",
+    "Hammer Curl",
+    "Cable Curl",
+    "Preacher Curl",
+    "Concentration Curl",
+  ],
+  Triceps: [
+    "Cable Triceps Pushdown",
+    "Overhead Triceps Extension",
+    "Skull Crusher",
+    "Close Grip Bench Press",
+    "Dip",
+    "Rope Pushdown",
+    "Triceps Kickback",
+  ],
+  Quads: [
+    "Back Squat",
+    "Front Squat",
+    "Leg Press",
+    "Hack Squat",
+    "Bulgarian Split Squat",
+    "Leg Extension",
+    "Lunge",
+    "Step-up",
+  ],
+  Hamstrings: [
+    "Romanian Deadlift",
+    "Seated Leg Curl",
+    "Lying Leg Curl",
+    "Good Morning",
+    "Nordic Curl",
+    "Single-leg Romanian Deadlift",
+  ],
+  Glutes: [
+    "Hip Thrust",
+    "Glute Bridge",
+    "Cable Kickback",
+    "Bulgarian Split Squat",
+    "Walking Lunge",
+    "Romanian Deadlift",
+    "Abduction Machine",
+  ],
+  Calves: [
+    "Standing Calf Raise",
+    "Seated Calf Raise",
+    "Leg Press Calf Raise",
+    "Single-leg Calf Raise",
+  ],
+  Abs: [
+    "Cable Crunch",
+    "Hanging Leg Raise",
+    "Plank",
+    "Ab Wheel Rollout",
+    "Reverse Crunch",
+    "Pallof Press",
+  ],
+};
+
+export function getExerciseOptionsForMuscleGroup(muscleGroup: MuscleGroup) {
+  if (muscleGroup === "All") {
+    return [];
+  }
+
+  return exerciseOptionsByMuscleGroup[muscleGroup];
+}
+
+export function getDefaultExerciseForMuscleGroup(muscleGroup: MuscleGroup) {
+  return getExerciseOptionsForMuscleGroup(muscleGroup)[0] ?? "";
+}
+
 export const savedSessionPageSizeOptions = [5, 10];

@@ -1,4 +1,5 @@
 using System.Net;
+using LiftOps.Api.DTOs;
 using LiftOps.Api.Services;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -29,6 +30,62 @@ public sealed class TrainingLogFunctions
         var logs = await _service.GetByDateRangeAsync(from, to);
         var response = request.CreateResponse(HttpStatusCode.OK);
         await response.WriteAsJsonAsync(logs);
+        return response;
+    }
+
+    [Function("SaveTrainingSession")]
+    public async Task<HttpResponseData> SaveTrainingSession(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "trainingsessions")] HttpRequestData request)
+    {
+        var dto = await request.ReadFromJsonAsync<TrainingSessionDto>();
+
+        if (dto is null)
+        {
+            return await WriteErrorAsync(request, HttpStatusCode.BadRequest, "Training session body is required.");
+        }
+
+        try
+        {
+            var savedLog = await _service.SaveAsync(dto);
+            var response = request.CreateResponse(HttpStatusCode.OK);
+            await response.WriteAsJsonAsync(savedLog);
+            return response;
+        }
+        catch (FormatException)
+        {
+            return await WriteErrorAsync(request, HttpStatusCode.BadRequest, "Training session date must use yyyy-MM-dd format.");
+        }
+    }
+
+    [Function("DeleteTrainingSession")]
+    public async Task<HttpResponseData> DeleteTrainingSession(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "trainingsessions/{id}")] HttpRequestData request,
+        string id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return await WriteErrorAsync(request, HttpStatusCode.BadRequest, "Training session id is required.");
+        }
+
+        var deletedLog = await _service.DeleteAsync(id);
+
+        if (deletedLog is null)
+        {
+            return await WriteErrorAsync(request, HttpStatusCode.NotFound, "Training session was not found.");
+        }
+
+        var response = request.CreateResponse(HttpStatusCode.OK);
+        await response.WriteAsJsonAsync(deletedLog);
+        return response;
+    }
+
+    private static async Task<HttpResponseData> WriteErrorAsync(
+        HttpRequestData request,
+        HttpStatusCode statusCode,
+        string message)
+    {
+        var response = request.CreateResponse(statusCode);
+        await response.WriteAsJsonAsync(new { message });
         return response;
     }
 }

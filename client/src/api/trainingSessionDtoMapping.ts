@@ -1,6 +1,6 @@
 import type { TrainingSessionDto } from "./dtos";
 import type { TrainingSession, TrainingSessionDetails } from "../types/appTypes";
-import { getTodayDate } from "../helpers/GenericHelpers";
+import { createId, getTodayDate } from "../helpers/GenericHelpers";
 
 function getDtoString(dto: TrainingSessionDto, camelKey: keyof TrainingSessionDto, pascalKey: string) {
   const dtoRecord = dto as unknown as Record<string, unknown>;
@@ -15,18 +15,20 @@ function getDtoNumber(dto: TrainingSessionDto, camelKey: keyof TrainingSessionDt
 }
 
 export function toTrainingSessionDto(input: TrainingSessionDetails): TrainingSessionDto {
-
   return {
     date: input.date,
-    durationMinutes: input.durationMinutes,
+    durationMinutes: 0,
     sessionRpe: input.sessionRpe,
-    exerciseName: input.exerciseName,
-    muscleGroup: input.primaryMuscleGroup,
-    reps: input.reps,
-    sets: input.sets,
-    weightKg: input.weightKg,
-    rir: input.rir,
-    rpe: input.rpe,
+    sets: Array.from({ length: input.sets }, () => ({
+      id: createId("set"),
+      exerciseName: input.exerciseName,
+      muscleGroup: input.primaryMuscleGroup,
+      reps: input.reps,
+      weightKg: input.weightKg,
+      rir: input.rir,
+      rpe: input.rpe,
+      isWarmup: input.isWarmup,
+    })),
   };
 }
 
@@ -35,17 +37,20 @@ export function fromTrainingDto(dto: TrainingSessionDto): TrainingSession {
 
   return {
     id: getDtoString(dto, "id", "Id") ?? `trainingSession-${dtoDate}`,
-    traingSessionDetails: {
-      date: dtoDate,
-      durationMinutes: getDtoNumber(dto, "durationMinutes", "DurationMinutes") ?? 0,
-      sessionRpe: getDtoNumber(dto, "sessionRpe", "SessionRpe") ?? 0,
-      exerciseName: getDtoString(dto, "exerciseName", "ExerciseName") ?? "",
-      primaryMuscleGroup: dto.muscleGroup,
-      sets: dto.sets,
-      reps: getDtoNumber(dto, "reps", "Reps") ?? 0,
-      weightKg: getDtoNumber(dto, "weightKg", "WeightKg") ?? 0,
-      rpe: getDtoNumber(dto, "rpe", "Rpe"),
-      rir: getDtoNumber(dto, "rir", "Rir"),
-    }
+    date: dtoDate,
+    durationMinutes: getDtoNumber(dto, "durationMinutes", "DurationMinutes") ?? 0,
+    sessionRpe: getDtoNumber(dto, "sessionRpe", "SessionRpe") ?? 0,
+    sets: dto.sets.map((set) => ({
+      id: set.id ?? createId("set"),
+      exerciseName: set.exerciseName,
+      muscleGroup: set.muscleGroup,
+      reps: set.reps,
+      weightKg: set.weightKg,
+      rpe: set.rpe,
+      rir: set.rir,
+      isWarmup: set.isWarmup,
+    })),
+    createdAt: getDtoString(dto, "createdAt", "CreatedAt") ?? `${dtoDate}T00:00:00.000Z`,
+    updatedAt: getDtoString(dto, "updatedAt", "UpdatedAt") ?? `${dtoDate}T00:00:00.000Z`,
   };
 }

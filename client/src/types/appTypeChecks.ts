@@ -128,6 +128,8 @@ export function isSetEntry(value: unknown): value is SetEntry {
 
   return (
     isString(value.id)
+    && isString(value.exerciseName)
+    && isMuscleGroup(value.muscleGroup)
     && isNumber(value.reps)
     && isNumber(value.weightKg)
     && (value.rpe === undefined || isNumber(value.rpe))

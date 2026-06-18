@@ -9,13 +9,19 @@ import {
   getTodayPreCheckLog,
   loadSavedPreCheckLogs,
 } from "../../helpers/PreCheckHelpers";
+import {
+  getLatestTrainingDayDetails,
+  loadSavedTrainingSessions,
+} from "../../helpers/TrainingPageHelpers";
 import { getTodayDate } from "../../helpers/GenericHelpers";
 import {
   getTodayPreCheck as getTodayPreCheckFromApi,
   savePreCheck as savePreCheckToApi,
   deletePreCheck as deletePreCheckFromApi,
 } from "../../api/preCheckApi";
+import { getTrainingSessions as getTrainingSessionsFromApi } from "../../api/trainingSessionApi";
 import { fromPreCheckDto, toPreCheckDto } from "../../api/preCheckDtoMapping";
+import { fromTrainingDto } from "../../api/trainingSessionDtoMapping";
 import { getErrorMessage, RequestStatus } from "./sliceHelpers";
 
 type UpdatePreCheckDetailsPayload = {
@@ -31,6 +37,13 @@ type PreCheckState = {
   error: string | null;
 };
 
+type FetchTodayPreCheckResult = {
+  todayLog: PreCheckLog | null;
+  defaultDraft: PreCheckDetailsLog;
+};
+
+const previousTrainingLookbackDays = 90;
+
 function upsertPreCheckLog(logs: PreCheckLog[], nextLog: PreCheckLog) {
   const existingLogIndex = logs.findIndex((log) => log.date === nextLog.date);
 
@@ -42,9 +55,40 @@ function upsertPreCheckLog(logs: PreCheckLog[], nextLog: PreCheckLog) {
   logs[existingLogIndex] = nextLog;
 }
 
+function getDateDaysAgo(daysAgo: number) {
+  const date = new Date(`${getTodayDate()}T00:00:00`);
+  date.setDate(date.getDate() - daysAgo);
+  return date.toISOString().slice(0, 10);
+}
+
+function getPreCheckDraftWithPreviousTrainingDefaults(trainingSessions = loadSavedTrainingSessions()) {
+  const latestTrainingDay = getLatestTrainingDayDetails(trainingSessions);
+
+  if (latestTrainingDay === null) {
+    return { ...initialPreCheckDetailsInput };
+  }
+
+  return {
+    ...initialPreCheckDetailsInput,
+    previousSessionRpe: latestTrainingDay.sessionRpe,
+  };
+}
+
+async function getBackendPreviousTrainingDefaultDraft() {
+  const to = getTodayDate();
+  const from = getDateDaysAgo(previousTrainingLookbackDays);
+  const backendTrainingSessions = (await getTrainingSessionsFromApi(from, to)).map(fromTrainingDto);
+  const localTrainingSessions = loadSavedTrainingSessions();
+
+  return getPreCheckDraftWithPreviousTrainingDefaults([
+    ...localTrainingSessions,
+    ...backendTrainingSessions,
+  ]);
+}
+
 // (Return type, Argument type, Thunk api config)
 export const fetchTodayPreCheck = createAsyncThunk<
-  PreCheckLog | null, 
+  FetchTodayPreCheckResult,
   void, 
   { rejectValue: string }
 >(
@@ -52,7 +96,26 @@ export const fetchTodayPreCheck = createAsyncThunk<
   async (_payload, thunkApi) => {
     try {
       const dto = await getTodayPreCheckFromApi();
-      return dto === null ? null : fromPreCheckDto(dto);
+      const todayLog = dto === null ? null : fromPreCheckDto(dto);
+
+      if (todayLog !== null) {
+        return {
+          todayLog,
+          defaultDraft: todayLog.input,
+        };
+      }
+
+      try {
+        return {
+          todayLog: null,
+          defaultDraft: await getBackendPreviousTrainingDefaultDraft(),
+        };
+      } catch {
+        return {
+          todayLog: null,
+          defaultDraft: getPreCheckDraftWithPreviousTrainingDefaults(),
+        };
+      }
     } catch (error) {
       return thunkApi.rejectWithValue(getErrorMessage(error));
     }
@@ -98,9 +161,10 @@ export const deletePreCheckLog = createAsyncThunk<
 function getInitialPreCheckState(): PreCheckState {
   const savedPreCheckLogs = [...loadSavedPreCheckLogs()];
   const savedTodayPreCheckLog = getTodayPreCheckLog(savedPreCheckLogs);
+  const defaultPreCheckDraft = getPreCheckDraftWithPreviousTrainingDefaults();
   return {
     preCheckDraft: savedTodayPreCheckLog !== undefined ?
-      {...savedTodayPreCheckLog.input} : {...initialPreCheckDetailsInput},
+      {...savedTodayPreCheckLog.input} : defaultPreCheckDraft,
     preCheckDraftUpdated: savedTodayPreCheckLog === undefined,
     savedPreCheckLogs: savedPreCheckLogs,
     status: "idle",
@@ -134,12 +198,22 @@ const preCheckSlice = createSlice({
         state.status = "success";
         state.error = null;
 
-        if (action.payload === null) {
+        if (action.payload.todayLog === null) {
+          const savedTodayPreCheckLog = getTodayPreCheckLog(state.savedPreCheckLogs);
+
+          if (savedTodayPreCheckLog !== undefined) {
+            state.preCheckDraft = { ...savedTodayPreCheckLog.input };
+            state.preCheckDraftUpdated = false;
+            return;
+          }
+
+          state.preCheckDraft = { ...action.payload.defaultDraft };
+          state.preCheckDraftUpdated = true;
           return;
         }
 
-        upsertPreCheckLog(state.savedPreCheckLogs, action.payload);
-        state.preCheckDraft = { ...action.payload.input };
+        upsertPreCheckLog(state.savedPreCheckLogs, action.payload.todayLog);
+        state.preCheckDraft = { ...action.payload.todayLog.input };
         state.preCheckDraftUpdated = false;
       })
       .addCase(fetchTodayPreCheck.rejected, (state, action) => {
@@ -173,7 +247,7 @@ const preCheckSlice = createSlice({
         state.savedPreCheckLogs = state.savedPreCheckLogs.filter((log) => log.id !== action.payload);
 
         if (deletedLog?.date === getTodayDate()) {
-          state.preCheckDraft = { ...initialPreCheckDetailsInput };
+          state.preCheckDraft = getPreCheckDraftWithPreviousTrainingDefaults();
           state.preCheckDraftUpdated = true;
         }
       })

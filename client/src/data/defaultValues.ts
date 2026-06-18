@@ -3,6 +3,7 @@ import type {
   PreCheckDetailsLog,
   TrainingSessionDetails,
 } from "../types/appTypes";
+import { getLocalDateString } from "../helpers/GenericHelpers";
 
 export const defaultProgramSettings: ProgramSettings = {
   currentWeek: 1,
@@ -22,11 +23,12 @@ export const initialPreCheckDetailsInput: PreCheckDetailsLog = {
 };
 
 export const initialTrainingSessionDetailsInput: TrainingSessionDetails = {
-  durationMinutes: 0,
-  exerciseName: "",
+  date: getLocalDateString(),
+  exerciseName: "Bench Press",
   primaryMuscleGroup: "Chest",
-  reps: 0,
-  sessionRpe: 0,
-  sets: 0,
-  weightKg: 0,  
+  isWarmup: false,
+  reps: 8,
+  sessionRpe: 7,
+  sets: 3,
+  weightKg: 60,
 };

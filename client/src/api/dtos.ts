@@ -10,16 +10,23 @@ export type PreCheckDto = {
   energy: number;
 };
 
-export type TrainingSessionDto = {
+export type TrainingSetEntryDto = {
   id?: string;
-  date: string;
-  durationMinutes: number;
-  sessionRpe: number;
   exerciseName: string;
   muscleGroup: MuscleGroup;
   reps: number;
   weightKg: number;
   rpe?: number;
   rir?: number;
-  sets: number;
+  isWarmup: boolean;
+};
+
+export type TrainingSessionDto = {
+  id?: string;
+  date: string;
+  durationMinutes: number;
+  sessionRpe: number;
+  sets: TrainingSetEntryDto[];
+  createdAt?: string;
+  updatedAt?: string;
 };

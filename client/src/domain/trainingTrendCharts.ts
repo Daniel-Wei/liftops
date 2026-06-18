@@ -14,6 +14,8 @@ const presetTrainingTrendWeeks: TrainingTrendWeek[] = [
   { label: "W4", startDate: "2026-05-18", endDate: "2026-05-24" },
   { label: "W5", startDate: "2026-05-25", endDate: "2026-05-31" },
   { label: "W6", startDate: "2026-06-01", endDate: "2026-06-07" },
+  { label: "W7", startDate: "2026-06-08", endDate: "2026-06-14" },
+  { label: "W8", startDate: "2026-06-15", endDate: "2026-06-21" },
 ];
 
 export function getTrainingTrendWeeks() {
@@ -37,9 +39,22 @@ function getSessionLoad(session: TrainingSession) {
   return session.durationMinutes * session.sessionRpe;
 }
 
+function getLatestSessionRecordPerTrainingDay(trainingSessions: TrainingSession[]) {
+  const sessionByDate = new Map<string, TrainingSession>();
+
+  trainingSessions.forEach((session) => {
+    const existingSession = sessionByDate.get(session.date);
+
+    if (!existingSession || session.updatedAt > existingSession.updatedAt) {
+      sessionByDate.set(session.date, session);
+    }
+  });
+
+  return [...sessionByDate.values()];
+}
+
 function getSessionVolumeLoad(session: TrainingSession) {
   return session.sets
-    .filter((set) => !set.isWarmup)
     .reduce((totalVolume, set) => totalVolume + (set.reps * set.weightKg), 0);
 }
 
@@ -126,7 +141,10 @@ function getWeekGroupedMaxTrainingTrend(
 }
 
 export function getWeeklySessionLoadTrend(trainingSessions: TrainingSession[]): TrendPoint[] {
-  return getWeekGroupedTrainingTrend(trainingSessions, getSessionLoad);
+  return getWeekGroupedTrainingTrend(
+    getLatestSessionRecordPerTrainingDay(trainingSessions),
+    getSessionLoad,
+  );
 }
 
 export function getWeeklyVolumeLoadTrend(trainingSessions: TrainingSession[]): TrendPoint[] {

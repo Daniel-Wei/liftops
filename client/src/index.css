@@ -1669,8 +1669,135 @@ textarea:focus-visible {
   font-weight: var(--weight-semibold);
 }
 
-.saved-session-card {
-  align-items: flex-start;
+.training-group-table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgba(31, 72, 98, 0.18);
+  border-radius: var(--radius-md);
+  background: linear-gradient(145deg, #f8fdff, #eef7fb);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.76),
+    0 8px 18px rgba(45, 104, 140, 0.06);
+}
+
+.training-group-table {
+  width: 100%;
+  min-width: 62rem;
+  border-collapse: collapse;
+  color: var(--color-ink);
+}
+
+.training-group-table th,
+.training-group-table td {
+  border-bottom: 1px solid rgba(31, 72, 98, 0.12);
+  padding: 0.78rem 0.9rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.training-group-table thead th {
+  background: rgba(255, 255, 255, 0.68);
+  color: var(--color-ink);
+  font-size: 0.84rem;
+  font-weight: var(--weight-semibold);
+}
+
+.training-group-table th:last-child,
+.training-group-table td:last-child {
+  text-align: right;
+}
+
+.training-group-table tbody:last-child tr:last-child td {
+  border-bottom: 0;
+}
+
+.training-group-row--day th,
+.training-group-row--muscle th {
+  text-align: left;
+}
+
+.training-group-row--day th {
+  background: linear-gradient(145deg, #ddf3e8, #d0efde);
+  border-top: 1px solid rgba(31, 72, 98, 0.14);
+}
+
+.training-group-row--muscle th {
+  background: rgba(255, 255, 255, 0.56);
+  padding-left: 2.15rem;
+}
+
+.training-group-row--exercise td {
+  background: rgba(255, 255, 255, 0.34);
+  color: var(--color-ink-muted);
+  font-size: 0.9rem;
+}
+
+.training-group-row--exercise:hover td {
+  background: rgba(212, 235, 246, 0.42);
+}
+
+.training-group-row--exercise td:first-child {
+  padding-left: 3.25rem;
+}
+
+.training-group-row--exercise td:nth-child(2),
+.training-group-row--exercise td:nth-child(3),
+.training-group-row--exercise td:nth-child(4),
+.training-group-row--exercise td:nth-child(5),
+.training-group-row--exercise td:nth-child(6) {
+  white-space: nowrap;
+}
+
+.training-group-heading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.training-group-toggle-button {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.65rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.training-group-toggle-button:hover .training-group-title {
+  color: var(--color-blue);
+}
+
+.training-group-heading .signal-chip {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.training-group-toggle {
+  width: 1.15rem;
+  flex: 0 0 1.15rem;
+  color: var(--color-ink-soft);
+  font-size: 1rem;
+}
+
+.training-group-title {
+  color: var(--color-ink);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.training-group-summary {
+  min-width: 0;
+  color: var(--color-ink-muted);
+  font-size: 0.84rem;
+}
+
+.training-exercise-name {
+  color: var(--color-ink);
+  font-weight: var(--weight-semibold);
 }
 
 .text-button {

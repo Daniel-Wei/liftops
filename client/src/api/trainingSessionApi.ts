@@ -8,14 +8,14 @@ export function getTrainingSessions(from: string, to: string) {
 }
 
 export function saveTrainingSession(dto: TrainingSessionDto) {
-  return requestJson<TrainingSessionDto>("/trainingSession", {
+  return requestJson<TrainingSessionDto>("/trainingsessions", {
     method: "POST",
     body: dto,
   });
 }
 
 export function deleteTrainingSession(id: string) {
-  return requestJson<TrainingSessionDto>(`/trainingSession/${encodeURIComponent(id)}`, {
+  return requestJson<TrainingSessionDto>(`/trainingsessions/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
 }

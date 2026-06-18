@@ -1,51 +1,71 @@
-import { 
-    formatDecimal,
-    formatWholeNumber,
-    getLocalDateString, 
-    getOptionalNumber } 
-from "./GenericHelpers";
-import { 
-    MuscleGroup, 
-    MuscleGroupFilter, 
-    SetEntry, 
-    MetricStatus, 
-    TrainingSession, 
-    TrainingSessionForm,
-    ExerciseSummary,
-    MuscleSummary,
-    Metric, 
-    TrendDirection,
-    EvidenceType,} 
-from "../types/appTypes";
+import {
+  formatDecimal,
+  formatWholeNumber,
+} from "./GenericHelpers";
+import {
+  EvidenceType,
+  MetricStatus,
+  TrendDirection,
+  type ExerciseSummary,
+  type Metric,
+  type MuscleGroup,
+  type MuscleGroupFilter,
+  type MuscleSummary,
+  type SetEntry,
+  type TrainingSession,
+  type TrainingSessionDetails,
+} from "../types/appTypes";
 import { TRAINING_SESSIONS_STORAGE_KEY } from "../data/localStorageKeys";
 import {
-  isString,
-  isNumber,
-  isStringKeyValuePairObjectRecord,
   isMuscleGroup,
+  isNumber,
   isSetArray,
-  isSetEntry,
+  isString,
+  isStringKeyValuePairObjectRecord,
 } from "../types/appTypeChecks";
 
-export function createDefaultTrainingSessionForm(primaryMuscleGroup: MuscleGroup): TrainingSessionForm {
-  return {
-    date: getLocalDateString(),
-    durationMinutes: "60",
-    sessionRpe: "7",
-    exerciseName: "Squat",
-    primaryMuscleGroup,
-    setsCount: "3",
-    reps: "8",
-    weightKg: "60",
-    setRpe: "8",
-    rir: "",
-  };
+export type TrainingExerciseGroup = {
+  key: string;
+  exerciseName: string;
+  muscleGroup: MuscleGroup;
+  sessionIds: string[];
+  sets: SetEntry[];
+  setCount: number;
+  workingSetCount: number;
+  hardSetCount: number;
+  volumeLoad: number;
+  workingVolumeLoad: number;
+};
+
+export type TrainingMuscleGroupSummary = {
+  muscleGroup: MuscleGroup;
+  exercises: TrainingExerciseGroup[];
+  setCount: number;
+  workingSetCount: number;
+  hardSetCount: number;
+  volumeLoad: number;
+  workingVolumeLoad: number;
+};
+
+export type TrainingDayGroup = {
+  date: string;
+  sessions: TrainingSession[];
+  muscles: TrainingMuscleGroupSummary[];
+  sessionRpe: number;
+  setCount: number;
+  workingSetCount: number;
+  hardSetCount: number;
+  volumeLoad: number;
+  workingVolumeLoad: number;
+  updatedAt: string;
+};
+
+function getSetVolumeLoad(set: SetEntry) {
+  return set.reps * set.weightKg;
 }
 
-// #region: internal helpers
-
 // Hard set is a product rule for display, not a medical or physiological diagnosis.
-function isHardSet(set: SetEntry) {
+export function isHardSet(set: SetEntry) {
   if (set.isWarmup) {
     return false;
   }
@@ -61,25 +81,37 @@ function isHardSet(set: SetEntry) {
   return set.reps > 0;
 }
 
-function getSessionHardSetCount(session: TrainingSession) {
-  return getWorkingSets(session).filter(isHardSet).length;
+export function getWorkingSets(session: TrainingSession) {
+  return session.sets.filter((set) => !set.isWarmup);
 }
 
 function getSessionVolumeLoad(session: TrainingSession) {
+  return session.sets.reduce((totalVolume, set) => (
+    totalVolume + getSetVolumeLoad(set)
+  ), 0);
+}
+
+function getSessionWorkingVolumeLoad(session: TrainingSession) {
   return getWorkingSets(session).reduce((totalVolume, set) => (
-    totalVolume + (set.reps * set.weightKg)
+    totalVolume + getSetVolumeLoad(set)
   ), 0);
 }
 
 function getTotalHardSetCount(trainingSessions: TrainingSession[]) {
   return trainingSessions.reduce((totalSets, session) => (
-    totalSets + getSessionHardSetCount(session)
+    totalSets + getWorkingSets(session).filter(isHardSet).length
   ), 0);
 }
 
 function getTotalVolumeLoad(trainingSessions: TrainingSession[]) {
   return trainingSessions.reduce((totalVolume, session) => (
     totalVolume + getSessionVolumeLoad(session)
+  ), 0);
+}
+
+function getTotalWorkingVolumeLoad(trainingSessions: TrainingSession[]) {
+  return trainingSessions.reduce((totalVolume, session) => (
+    totalVolume + getSessionWorkingVolumeLoad(session)
   ), 0);
 }
 
@@ -118,23 +150,7 @@ function getTopSetEffortStatus(topSetEffort: string) {
   return rir <= 1 ? MetricStatus.Watch : MetricStatus.Good;
 }
 
-// #endregion
-
-// Session load follows the common session-RPE method: session RPE x duration minutes.
-export function getSessionLoad(session: TrainingSession) {
-  return session.durationMinutes * session.sessionRpe;
-}
-
-// Validates the simple post-workout form before it becomes a typed TrainingSession.
-export function getTrainingFormError(form: TrainingSessionForm) {
-  const durationMinutes = Number(form.durationMinutes);
-  const sessionRpe = Number(form.sessionRpe);
-  const setsCount = Number(form.setsCount);
-  const reps = Number(form.reps);
-  const weightKg = Number(form.weightKg);
-  const setRpe = getOptionalNumber(form.setRpe);
-  const rir = getOptionalNumber(form.rir);
-
+export function getTrainingFormError(form: TrainingSessionDetails) {
   if (form.date.trim() === "") {
     return "Please choose a session date.";
   }
@@ -143,31 +159,27 @@ export function getTrainingFormError(form: TrainingSessionForm) {
     return "Please enter an exercise name.";
   }
 
-  if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) {
-    return "Duration must be greater than 0 minutes.";
-  }
-
-  if (!Number.isFinite(sessionRpe) || sessionRpe < 1 || sessionRpe > 10) {
+  if (!Number.isFinite(form.sessionRpe) || form.sessionRpe < 1 || form.sessionRpe > 10) {
     return "Session RPE must be between 1 and 10.";
   }
 
-  if (!Number.isInteger(setsCount) || setsCount <= 0) {
+  if (!Number.isInteger(form.sets) || form.sets <= 0) {
     return "Sets must be a whole number greater than 0.";
   }
 
-  if (!Number.isFinite(reps) || reps <= 0) {
+  if (!Number.isFinite(form.reps) || form.reps <= 0) {
     return "Reps must be greater than 0.";
   }
 
-  if (!Number.isFinite(weightKg) || weightKg < 0) {
+  if (!Number.isFinite(form.weightKg) || form.weightKg < 0) {
     return "Weight must be 0 kg or higher.";
   }
 
-  if (setRpe !== undefined && (!Number.isFinite(setRpe) || setRpe < 1 || setRpe > 10)) {
+  if (form.rpe !== undefined && (!Number.isFinite(form.rpe) || form.rpe < 1 || form.rpe > 10)) {
     return "Set RPE must be blank or between 1 and 10.";
   }
 
-  if (rir !== undefined && (!Number.isFinite(rir) || rir < 0)) {
+  if (form.rir !== undefined && (!Number.isFinite(form.rir) || form.rir < 0)) {
     return "RIR must be blank or 0 or higher.";
   }
 
@@ -175,11 +187,13 @@ export function getTrainingFormError(form: TrainingSessionForm) {
 }
 
 export function getSessionExerciseName(session: TrainingSession) {
-  return session.exerciseName;
-}
+  const exerciseNames = [...new Set(getWorkingSets(session).map((set) => set.exerciseName))];
 
-export function getWorkingSets(session: TrainingSession) {
-  return session.sets.filter((set) => !set.isWarmup);
+  if (exerciseNames.length === 0) {
+    return "No exercise";
+  }
+
+  return exerciseNames.length === 1 ? exerciseNames[0] : `${exerciseNames.length} exercises`;
 }
 
 export function getSessionSetCount(session: TrainingSession) {
@@ -202,53 +216,42 @@ export function doesSessionMatchMuscleGroup(
     return true;
   }
 
-  return session.primaryMuscleGroup === selectedMuscleGroup;
+  return session.sets.some((set) => set.muscleGroup === selectedMuscleGroup);
 }
 
 // Converts saved sessions into the metric-card shape used by the Training page.
 export function buildRealTrainingMetrics(trainingSessions: TrainingSession[]): Metric[] {
   const sortedSessions = sortTrainingSessionsNewestFirst(trainingSessions);
-  const latestSession = sortedSessions[0] ?? null;
+  const latestTrainingDay = getTrainingDayGroups(sortedSessions)[0] ?? null;
   const hardSets = getTotalHardSetCount(sortedSessions);
   const volumeLoad = getTotalVolumeLoad(sortedSessions);
+  const workingVolumeLoad = getTotalWorkingVolumeLoad(sortedSessions);
   const topSetEffort = getTopSetEffortValue(sortedSessions);
 
   return [
     {
-      label: "Latest Session Load",
-      labelZh: "最近训练负荷",
-      value: latestSession ? `${formatWholeNumber(getSessionLoad(latestSession))} AU` : "No session",
-      trend: latestSession ? TrendDirection.Up : TrendDirection.Stable,
-      status: latestSession && getSessionLoad(latestSession) >= 600
-        ? MetricStatus.Watch
-        : MetricStatus.Neutral,
-      evidenceType: EvidenceType.Established,
-      explanation: "Calculated only from saved training sessions: session RPE x duration.",
-      explanationZh: "只从已保存训练记录计算：session RPE x 训练时长。",
-    },
-    {
-      label: "Latest Session Time",
-      labelZh: "最近训练时长",
-      value: latestSession ? `${latestSession.durationMinutes} min` : "No session",
-      trend: TrendDirection.Stable,
-      status: latestSession ? MetricStatus.Good : MetricStatus.Neutral,
+      label: "Latest Training Day",
+      labelZh: "最近训练日",
+      value: latestTrainingDay ? `${latestTrainingDay.setCount} sets` : "No session",
+      trend: latestTrainingDay ? TrendDirection.Up : TrendDirection.Stable,
+      status: latestTrainingDay ? MetricStatus.Good : MetricStatus.Neutral,
       evidenceType: EvidenceType.SimpleArithmetic,
-      explanation: "Uses the duration field from the latest saved session.",
-      explanationZh: "使用最近一条已保存训练记录里的训练时长。",
+      explanation: "Uses saved sets from the latest training day; duration is captured only in Pre-check.",
+      explanationZh: "使用最近训练日保存的组数；训练总时长只在 Pre-check 记录。",
     },
     {
       label: "Latest Session RPE",
       labelZh: "最近训练 RPE",
-      value: latestSession ? `${latestSession.sessionRpe} / 10` : "No session",
-      trend: latestSession && latestSession.sessionRpe >= 8
+      value: latestTrainingDay ? `${latestTrainingDay.sessionRpe} / 10` : "No session",
+      trend: latestTrainingDay && latestTrainingDay.sessionRpe >= 8
         ? TrendDirection.Up
         : TrendDirection.Stable,
-      status: latestSession && latestSession.sessionRpe >= 8
+      status: latestTrainingDay && latestTrainingDay.sessionRpe >= 8
         ? MetricStatus.Watch
         : MetricStatus.Neutral,
       evidenceType: EvidenceType.Established,
-      explanation: "Uses the session RPE field from the latest saved session.",
-      explanationZh: "使用最近一条已保存训练记录里的 session RPE。",
+      explanation: "Uses the session RPE from the latest saved training day.",
+      explanationZh: "使用最近训练日的 session RPE。",
     },
     {
       label: "Saved Hard Sets",
@@ -261,14 +264,24 @@ export function buildRealTrainingMetrics(trainingSessions: TrainingSession[]): M
       explanationZh: "统计已保存训练中按 RPE 或 RIR 判断足够接近力竭的非热身组。",
     },
     {
-      label: "Saved Volume Load",
-      labelZh: "已保存训练量",
+      label: "Saved Total Volume",
+      labelZh: "已保存总训练量",
       value: `${formatWholeNumber(volumeLoad)} kg`,
       trend: volumeLoad > 0 ? TrendDirection.Up : TrendDirection.Stable,
       status: volumeLoad > 0 ? MetricStatus.Good : MetricStatus.Neutral,
       evidenceType: EvidenceType.Established,
-      explanation: "Sums reps x weight across saved non-warmup sets.",
-      explanationZh: "汇总已保存非热身组的 次数 x 重量。",
+      explanation: "Sums reps x weight across all saved sets, including warm-ups.",
+      explanationZh: "汇总所有已保存组的 次数 x 重量，包括热身组。",
+    },
+    {
+      label: "Saved Working Volume",
+      labelZh: "已保存正式组训练量",
+      value: `${formatWholeNumber(workingVolumeLoad)} kg`,
+      trend: workingVolumeLoad > 0 ? TrendDirection.Up : TrendDirection.Stable,
+      status: workingVolumeLoad > 0 ? MetricStatus.Good : MetricStatus.Neutral,
+      evidenceType: EvidenceType.Established,
+      explanation: "Sums reps x weight across saved working sets only.",
+      explanationZh: "只汇总已保存正式组的 次数 x 重量。",
     },
     {
       label: "Top Set Effort",
@@ -288,27 +301,25 @@ export function getExerciseSummaries(trainingSessions: TrainingSession[]) {
   const summaryMap = new Map<string, ExerciseSummary>();
 
   trainingSessions.forEach((session) => {
-    const key = `${session.exerciseName}-${session.primaryMuscleGroup}`;
-    const existingSummary = summaryMap.get(key);
-    const workingSets = getWorkingSets(session);
-    const volumeLoad = workingSets.reduce((totalVolume, set) => (
-      totalVolume + (set.reps * set.weightKg)
-    ), 0);
+    session.sets.forEach((set) => {
+      const key = `${set.exerciseName}-${set.muscleGroup}`;
+      const existingSummary = summaryMap.get(key);
+      const volumeLoad = getSetVolumeLoad(set);
 
-    if (existingSummary) {
-      existingSummary.sessions += 1;
-      existingSummary.sets += workingSets.length;
-      existingSummary.volumeLoad += volumeLoad;
-      return;
-    }
+      if (existingSummary) {
+        existingSummary.sets += 1;
+        existingSummary.volumeLoad += volumeLoad;
+        return;
+      }
 
-    summaryMap.set(key, {
-      key,
-      exerciseName: session.exerciseName,
-      muscleGroups: session.primaryMuscleGroup,
-      sessions: 1,
-      sets: workingSets.length,
-      volumeLoad,
+      summaryMap.set(key, {
+        key,
+        exerciseName: set.exerciseName,
+        muscleGroups: set.muscleGroup,
+        sessions: 1,
+        sets: 1,
+        volumeLoad,
+      });
     });
   });
 
@@ -324,14 +335,11 @@ export function getPriorityMuscleSummaries(
 ) {
   return priorityMuscles.map((muscleGroup) => {
     const summary = trainingSessions.reduce<MuscleSummary>((currentSummary, session) => {
-      if (session.primaryMuscleGroup !== muscleGroup) {
-        return currentSummary;
-      }
+      const muscleSets = getWorkingSets(session).filter((set) => set.muscleGroup === muscleGroup);
 
-      const workingSets = getWorkingSets(session);
-      currentSummary.hardSets += workingSets.filter(isHardSet).length;
-      currentSummary.volumeLoad += workingSets.reduce((totalVolume, set) => (
-        totalVolume + (set.reps * set.weightKg)
+      currentSummary.hardSets += muscleSets.filter(isHardSet).length;
+      currentSummary.volumeLoad += muscleSets.reduce((totalVolume, set) => (
+        totalVolume + getSetVolumeLoad(set)
       ), 0);
 
       return currentSummary;
@@ -343,6 +351,114 @@ export function getPriorityMuscleSummaries(
 
     return summary;
   });
+}
+
+export function getTrainingDayGroups(trainingSessions: TrainingSession[]): TrainingDayGroup[] {
+  const sortedSessions = sortTrainingSessionsNewestFirst(trainingSessions);
+  const dayMap = new Map<string, TrainingDayGroup>();
+
+  sortedSessions.forEach((session) => {
+    let dayGroup = dayMap.get(session.date);
+
+    if (!dayGroup) {
+      dayGroup = {
+        date: session.date,
+        sessions: [],
+        muscles: [],
+        sessionRpe: session.sessionRpe,
+        setCount: 0,
+        workingSetCount: 0,
+        hardSetCount: 0,
+        volumeLoad: 0,
+        workingVolumeLoad: 0,
+        updatedAt: session.updatedAt,
+      };
+      dayMap.set(session.date, dayGroup);
+    }
+
+    dayGroup.sessions.push(session);
+
+    if (session.updatedAt > dayGroup.updatedAt) {
+      dayGroup.sessionRpe = session.sessionRpe;
+      dayGroup.updatedAt = session.updatedAt;
+    }
+
+    session.sets.forEach((set) => {
+      let muscleGroup = dayGroup.muscles.find((group) => group.muscleGroup === set.muscleGroup);
+
+      if (!muscleGroup) {
+        muscleGroup = {
+          muscleGroup: set.muscleGroup,
+          exercises: [],
+          setCount: 0,
+          workingSetCount: 0,
+          hardSetCount: 0,
+          volumeLoad: 0,
+          workingVolumeLoad: 0,
+        };
+        dayGroup.muscles.push(muscleGroup);
+      }
+
+      let exerciseGroup = muscleGroup.exercises.find((group) => group.exerciseName === set.exerciseName);
+
+      if (!exerciseGroup) {
+        exerciseGroup = {
+          key: `${dayGroup.date}-${set.muscleGroup}-${set.exerciseName}`,
+          exerciseName: set.exerciseName,
+          muscleGroup: set.muscleGroup,
+          sessionIds: [],
+          sets: [],
+          setCount: 0,
+          workingSetCount: 0,
+          hardSetCount: 0,
+          volumeLoad: 0,
+          workingVolumeLoad: 0,
+        };
+        muscleGroup.exercises.push(exerciseGroup);
+      }
+
+      if (!exerciseGroup.sessionIds.includes(session.id)) {
+        exerciseGroup.sessionIds.push(session.id);
+      }
+
+      const volumeLoad = getSetVolumeLoad(set);
+      const workingVolumeLoad = set.isWarmup ? 0 : volumeLoad;
+      const workingSetCount = set.isWarmup ? 0 : 1;
+      const isHard = isHardSet(set);
+
+      exerciseGroup.sets.push(set);
+      exerciseGroup.setCount += 1;
+      exerciseGroup.workingSetCount += workingSetCount;
+      exerciseGroup.hardSetCount += isHard ? 1 : 0;
+      exerciseGroup.volumeLoad += volumeLoad;
+      exerciseGroup.workingVolumeLoad += workingVolumeLoad;
+      muscleGroup.setCount += 1;
+      muscleGroup.workingSetCount += workingSetCount;
+      muscleGroup.hardSetCount += isHard ? 1 : 0;
+      muscleGroup.volumeLoad += volumeLoad;
+      muscleGroup.workingVolumeLoad += workingVolumeLoad;
+      dayGroup.setCount += 1;
+      dayGroup.workingSetCount += workingSetCount;
+      dayGroup.hardSetCount += isHard ? 1 : 0;
+      dayGroup.volumeLoad += volumeLoad;
+      dayGroup.workingVolumeLoad += workingVolumeLoad;
+    });
+  });
+
+  return [...dayMap.values()];
+}
+
+export function getLatestTrainingDayDetails(trainingSessions: TrainingSession[]) {
+  const latestTrainingDay = getTrainingDayGroups(trainingSessions)[0] ?? null;
+
+  if (latestTrainingDay === null) {
+    return null;
+  }
+
+  return {
+    date: latestTrainingDay.date,
+    sessionRpe: latestTrainingDay.sessionRpe,
+  };
 }
 
 export function loadSavedTrainingSessions() {
@@ -392,35 +508,7 @@ function getTrainingSessionFromStorage(value: unknown): TrainingSession | null {
     return value;
   }
 
-  if (!isStringKeyValuePairObjectRecord(value)) {
-    return null;
-  }
-
-  if (
-    !isString(value.id)
-    || !isString(value.date)
-    || !isNumber(value.durationMinutes)
-    || !isNumber(value.sessionRpe)
-    || !isString(value.exerciseName)
-    || !isSetArray(value.sets)
-    || !isString(value.createdAt)
-    || !isString(value.updatedAt)
-    || !isMuscleGroup(value.primaryMuscleGroup)
-  ) {
-    return null;
-  }
-
-  return {
-    id: value.id,
-    date: value.date,
-    durationMinutes: value.durationMinutes,
-    sessionRpe: value.sessionRpe,
-    exerciseName: value.exerciseName,
-    primaryMuscleGroup: value.primaryMuscleGroup,
-    sets: value.sets,
-    createdAt: value.createdAt,
-    updatedAt: value.updatedAt,
-  };
+  return null;
 }
 
 function isTrainingSession(value: unknown): value is TrainingSession {
@@ -433,10 +521,7 @@ function isTrainingSession(value: unknown): value is TrainingSession {
     && isString(value.date)
     && isNumber(value.durationMinutes)
     && isNumber(value.sessionRpe)
-    && isString(value.exerciseName)
-    && isMuscleGroup(value.primaryMuscleGroup)
-    && Array.isArray(value.sets)
-    && value.sets.every(isSetEntry)
+    && isSetArray(value.sets)
     && isString(value.createdAt)
     && isString(value.updatedAt)
   );

@@ -80,11 +80,8 @@ export type MuscleGroup =
   | "Abs"
   | "All";
 
-// TrainingSession stores one quick-saved post-workout exercise, separate from readiness check-ins.
-
 export type TrainingSessionDetails = {
   date: string;
-  durationMinutes: number;
   sessionRpe: number;
   exerciseName: string;
   primaryMuscleGroup: MuscleGroup;
@@ -93,11 +90,29 @@ export type TrainingSessionDetails = {
   weightKg: number;
   rpe?: number;
   rir?: number;
-}
+  isWarmup: boolean;
+};
 
+export type SetEntry = {
+  id: string;
+  exerciseName: string;
+  muscleGroup: MuscleGroup;
+  reps: number;
+  weightKg: number;
+  rpe?: number;
+  rir?: number;
+  isWarmup: boolean;
+};
+
+// TrainingSession stores one saved training day/session, separate from readiness check-ins.
 export type TrainingSession = {
   id: string;
-  traingSessionDetails: TrainingSessionDetails;
+  date: string;
+  durationMinutes: number;
+  sessionRpe: number;
+  sets: SetEntry[];
+  createdAt: string;
+  updatedAt: string;
 };
 
 // BodyweightEntry stores scale-weight data for weight trend calculations.
@@ -328,23 +343,9 @@ export type ReadinessControl = {
 };
 
 // #region TrainingPage types
-// The form keeps input values as strings so users can freely edit number fields before saving.
-export type TrainingSessionForm = {
-  date: string;
-  durationMinutes: string;
-  sessionRpe: string;
-  exerciseName: string;
-  primaryMuscleGroup: MuscleGroup;
-  setsCount: string;
-  reps: string;
-  weightKg: string;
-  setRpe: string;
-  rir: string;
-};
 
 export type TrainingSessionTextField =
   | "date"
-  | "durationMinutes"
   | "sessionRpe"
   | "exerciseName"
   | "setsCount"

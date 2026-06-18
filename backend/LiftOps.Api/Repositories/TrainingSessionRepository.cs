@@ -22,4 +22,12 @@ public sealed class TrainingLogRepository : ITrainingLogRepository
         _logsById.AddOrUpdate(log.Id, log, (_, _) => log);
         return Task.FromResult(log);
     }
+
+    public Task<TrainingSession?> DeleteByIdAsync(string id)
+    {
+        return Task.FromResult(
+            _logsById.TryRemove(id, out var deletedLog)
+                ? deletedLog
+                : null);
+    }
 }

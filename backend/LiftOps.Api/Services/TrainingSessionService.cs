@@ -24,4 +24,10 @@ public sealed class TrainingSessionService : ITrainingSessionService
         var savedLog = await _repository.SaveAsync(TrainingSessionMapping.ToModel(dto));
         return TrainingSessionMapping.ToDto(savedLog);
     }
+
+    public async Task<TrainingSessionDto?> DeleteAsync(string id)
+    {
+        var deletedLog = await _repository.DeleteByIdAsync(id);
+        return deletedLog is null ? null : TrainingSessionMapping.ToDto(deletedLog);
+    }
 }
