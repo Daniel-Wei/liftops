@@ -88,6 +88,12 @@ export function toPreCheckDto(input: PreCheckDetailsLog, savedLog?: PreCheckLog)
     stress: getStressFromRestingHeartRateDelta(input.restingHeartRateDelta),
     motivation: scaleTenToFive(input.motivation),
     energy: scaleTenToFive(input.motivation),
+    sleepHours: input.sleepHours,
+    sorenessRating: input.soreness,
+    motivationRating: input.motivation,
+    restingHeartRateDelta: input.restingHeartRateDelta,
+    previousSessionRpe: input.previousSessionRpe,
+    previousSessionDurationMinutes: input.previousSessionDurationMinutes,
   };
 }
 
@@ -96,13 +102,24 @@ export function fromPreCheckDto(dto: PreCheckDto, fallbackInput = initialPreChec
   const dtoSleepQuality = getDtoNumber(dto, "sleepQuality", "SleepQuality") ?? 3;
   const dtoSoreness = getDtoNumber(dto, "soreness", "Soreness") ?? 3;
   const dtoMotivation = getDtoNumber(dto, "motivation", "Motivation") ?? 3;
+  const dtoSleepHours = getDtoNumber(dto, "sleepHours", "SleepHours");
+  const dtoSorenessRating = getDtoNumber(dto, "sorenessRating", "SorenessRating");
+  const dtoMotivationRating = getDtoNumber(dto, "motivationRating", "MotivationRating");
+  const dtoRestingHeartRateDelta = getDtoNumber(dto, "restingHeartRateDelta", "RestingHeartRateDelta");
+  const dtoPreviousSessionRpe = getDtoNumber(dto, "previousSessionRpe", "PreviousSessionRpe");
+  const dtoPreviousSessionDurationMinutes = getDtoNumber(
+    dto,
+    "previousSessionDurationMinutes",
+    "PreviousSessionDurationMinutes",
+  );
   const input = {
-    sleepHours: getSleepHoursFromQuality(dtoSleepQuality),
-    soreness: scaleFiveToTen(dtoSoreness),
-    motivation: scaleFiveToTen(dtoMotivation),
-    restingHeartRateDelta: fallbackInput.restingHeartRateDelta,
-    previousSessionRpe: fallbackInput.previousSessionRpe,
-    previousSessionDurationMinutes: fallbackInput.previousSessionDurationMinutes,
+    sleepHours: dtoSleepHours ?? getSleepHoursFromQuality(dtoSleepQuality),
+    soreness: dtoSorenessRating ?? scaleFiveToTen(dtoSoreness),
+    motivation: dtoMotivationRating ?? scaleFiveToTen(dtoMotivation),
+    restingHeartRateDelta: dtoRestingHeartRateDelta ?? fallbackInput.restingHeartRateDelta,
+    previousSessionRpe: dtoPreviousSessionRpe ?? fallbackInput.previousSessionRpe,
+    previousSessionDurationMinutes:
+      dtoPreviousSessionDurationMinutes ?? fallbackInput.previousSessionDurationMinutes,
   };
 
   return {

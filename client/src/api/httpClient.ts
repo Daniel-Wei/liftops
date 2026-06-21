@@ -1,4 +1,5 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
+const USER_ID = import.meta.env.VITE_LIFTBATTERY_USER_ID ?? "demo-user";
 
 type HttpRequestOptions = {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -7,6 +8,7 @@ type HttpRequestOptions = {
 
 function buildHeaders(hasBody: boolean) {
   const headers = new Headers();
+  headers.set("X-LiftBattery-User-Id", USER_ID);
 
   if (hasBody) {
     headers.set("Content-Type", "application/json");

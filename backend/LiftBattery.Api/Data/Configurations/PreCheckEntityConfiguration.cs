@@ -1,0 +1,22 @@
+using LiftBattery.Api.Data.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace LiftBattery.Api.Data.Configurations;
+
+public sealed class PreCheckEntityConfiguration : IEntityTypeConfiguration<PreCheckEntity>
+{
+    public void Configure(EntityTypeBuilder<PreCheckEntity> builder)
+    {
+        builder.ToTable("PreChecks");
+        builder.HasKey(entity => entity.Id);
+        builder.Property(entity => entity.Id).HasMaxLength(32);
+        builder.Property(entity => entity.UserId).HasMaxLength(100).IsRequired();
+        builder.Property(entity => entity.SleepHours).HasPrecision(4, 2);
+        builder.Property(entity => entity.CreatedAtUtc).HasPrecision(7);
+        builder.Property(entity => entity.UpdatedAtUtc).HasPrecision(7);
+        builder.HasIndex(entity => new { entity.UserId, entity.PreCheckDate })
+            .IsUnique()
+            .HasDatabaseName("UX_PreChecks_UserId_PreCheckDate");
+    }
+}

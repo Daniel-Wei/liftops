@@ -1,14 +1,18 @@
 using System.Text.Json;
 using Azure.Core.Serialization;
+using LiftBattery.Api.Data;
+using LiftBattery.Api.Options;
 using LiftBattery.Api.Repositories;
 using LiftBattery.Api.Services;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 var host = new HostBuilder()
     .ConfigureFunctionsWorkerDefaults()
-    .ConfigureServices(services =>
+    .ConfigureServices((context, services) =>
     {
         services.Configure<WorkerOptions>(options =>
         {
@@ -19,13 +23,22 @@ var host = new HostBuilder()
             });
         });
 
-        services.AddSingleton<IPreCheckRepository, PreCheckRepository>();
+        var databaseConnection = context.Configuration.GetConnectionString("LiftBatteryDatabase")
+            ?? throw new InvalidOperationException(
+                "ConnectionStrings:LiftBatteryDatabase is required for PreCheck persistence.");
+
+        services.Configure<PreCheckOptions>(
+            context.Configuration.GetSection(PreCheckOptions.SectionName));
+        services.AddDbContext<LiftBatteryDbContext>(options =>
+            options.UseSqlServer(databaseConnection, sqlOptions => sqlOptions.EnableRetryOnFailure()));
+        services.AddSingleton(TimeProvider.System);
+        services.AddScoped<IPreCheckRepository, PreCheckRepository>();
         services.AddSingleton<ITrainingLogRepository, TrainingLogRepository>();
-        services.AddSingleton<IPreCheckService, PreCheckService>();
+        services.AddScoped<IPreCheckService, PreCheckService>();
         services.AddSingleton<ITrainingSessionService, TrainingSessionService>();
         services.AddSingleton<ITrendReportJobRepository, TrendReportJobRepository>();
         services.AddSingleton<ITrendReportQueue, TrendReportServiceBusQueue>();
-        services.AddSingleton<ITrendReportService, TrendReportService>();
+        services.AddScoped<ITrendReportService, TrendReportService>();
     })
     .Build();
 

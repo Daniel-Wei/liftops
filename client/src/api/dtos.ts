@@ -8,6 +8,12 @@ export type PreCheckDto = {
   stress: number;
   motivation: number;
   energy: number;
+  sleepHours?: number;
+  sorenessRating?: number;
+  motivationRating?: number;
+  restingHeartRateDelta?: number;
+  previousSessionRpe?: number;
+  previousSessionDurationMinutes?: number;
 };
 
 export type TrainingSetEntryDto = {

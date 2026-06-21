@@ -7,4 +7,10 @@ public sealed record PreCheckDto(
     int Soreness,
     int Stress,
     int Motivation,
-    int Energy);
+    int Energy,
+    decimal? SleepHours = null,
+    int? SorenessRating = null,
+    int? MotivationRating = null,
+    int? RestingHeartRateDelta = null,
+    int? PreviousSessionRpe = null,
+    int? PreviousSessionDurationMinutes = null);

@@ -1,40 +1,9 @@
-import {
-  isDailyPreCheckLogArray,
-} from "../types/appTypeChecks";
-import {
-    PRE_CHECK_LOGS_STORAGE_KEY,
- } from "../data/localStorageKeys";
 import { PreCheckLog, PreCheckDetailsLog } from "../types/appTypes";
 import { getTodayDate } from "./GenericHelpers";
 
 export function getTodayPreCheckLog(savedPreCheckLogs: PreCheckLog[]) {
   const today = getTodayDate();
   return savedPreCheckLogs.find((savedLog) => savedLog.date === today);
-}
-
-// Loads saved history logs, falling back to an empty history if storage is empty or invalid.
-export function loadSavedPreCheckLogs() {
-  try {
-    const savedValue = localStorage.getItem(PRE_CHECK_LOGS_STORAGE_KEY);
-
-    if (savedValue === null) {
-      return [];
-    }
-
-    const parsedValue: unknown = JSON.parse(savedValue);
-
-    if (isDailyPreCheckLogArray(parsedValue)) {
-      return parsedValue.map((log) => ({
-        id: log.id,
-        date: log.date,
-        input: { ...log.input },
-      }));
-    }
-
-    return [];
-  } catch {
-    return [];
-  }
 }
 
 export function getPreCheckDraftUpdated(preCheckLogs: PreCheckLog[], todayDraft: PreCheckDetailsLog) {

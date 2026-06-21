@@ -6,7 +6,6 @@ import {
   isProgramSettings,
   isMuscleGroup,
   isSetArray,
-  isDailyPreCheckLogArray,
 } from "../types/appTypeChecks";
 import {
   initialPreCheckDetailsInput,
@@ -14,7 +13,6 @@ import {
 } from "../data/defaultValues";
 import { 
     PRE_CHECK_DRAFT_STORAGE_KEY,
-    PRE_CHECK_LOGS_STORAGE_KEY,
     TRAINING_SESSIONS_STORAGE_KEY,
     PROGRAM_SETTINGS_STORAGE_KEY,
  } from "../data/localStorageKeys";

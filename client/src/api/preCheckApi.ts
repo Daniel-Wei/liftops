@@ -1,8 +1,13 @@
 import { requestJson } from "./httpClient";
 import type { PreCheckDto } from "./dtos";
 
-export function getTodayPreCheck() {
-  return requestJson<PreCheckDto | null>("/precheck/today");
+export function getPreCheckByDate(date: string) {
+  return requestJson<PreCheckDto | null>(`/precheck?date=${encodeURIComponent(date)}`);
+}
+
+export function getPreChecks(from: string, to: string) {
+  const query = new URLSearchParams({ from, to });
+  return requestJson<PreCheckDto[]>(`/prechecks?${query.toString()}`);
 }
 
 export function savePreCheck(dto: PreCheckDto) {

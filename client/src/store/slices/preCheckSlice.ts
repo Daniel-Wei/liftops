@@ -7,7 +7,6 @@ import type {
 import {
   getPreCheckDraftUpdated,
   getTodayPreCheckLog,
-  loadSavedPreCheckLogs,
 } from "../../helpers/PreCheckHelpers";
 import {
   getLatestTrainingDayDetails,
@@ -15,7 +14,8 @@ import {
 } from "../../helpers/TrainingPageHelpers";
 import { getTodayDate } from "../../helpers/GenericHelpers";
 import {
-  getTodayPreCheck as getTodayPreCheckFromApi,
+  getPreCheckByDate as getPreCheckByDateFromApi,
+  getPreChecks as getPreChecksFromApi,
   savePreCheck as savePreCheckToApi,
   deletePreCheck as deletePreCheckFromApi,
 } from "../../api/preCheckApi";
@@ -39,6 +39,7 @@ type PreCheckState = {
 
 type FetchTodayPreCheckResult = {
   todayLog: PreCheckLog | null;
+  logs: PreCheckLog[];
   defaultDraft: PreCheckDetailsLog;
 };
 
@@ -95,12 +96,20 @@ export const fetchTodayPreCheck = createAsyncThunk<
   "preCheck/fetchTodayPreCheck", // type prefix: pending, fulfilled, rejected generated
   async (_payload, thunkApi) => {
     try {
-      const dto = await getTodayPreCheckFromApi();
+      const today = getTodayDate();
+      const historyFrom = getDateDaysAgo(previousTrainingLookbackDays);
+      const [dto, historyDtos] = await Promise.all([
+        getPreCheckByDateFromApi(today),
+        getPreChecksFromApi(historyFrom, today),
+      ]);
       const todayLog = dto === null ? null : fromPreCheckDto(dto);
+      const logs = historyDtos.map((historyDto) => fromPreCheckDto(historyDto));
 
       if (todayLog !== null) {
+        upsertPreCheckLog(logs, todayLog);
         return {
           todayLog,
+          logs,
           defaultDraft: todayLog.input,
         };
       }
@@ -108,11 +117,13 @@ export const fetchTodayPreCheck = createAsyncThunk<
       try {
         return {
           todayLog: null,
+          logs,
           defaultDraft: await getBackendPreviousTrainingDefaultDraft(),
         };
       } catch {
         return {
           todayLog: null,
+          logs,
           defaultDraft: getPreCheckDraftWithPreviousTrainingDefaults(),
         };
       }
@@ -159,14 +170,11 @@ export const deletePreCheckLog = createAsyncThunk<
 );
 
 function getInitialPreCheckState(): PreCheckState {
-  const savedPreCheckLogs = [...loadSavedPreCheckLogs()];
-  const savedTodayPreCheckLog = getTodayPreCheckLog(savedPreCheckLogs);
   const defaultPreCheckDraft = getPreCheckDraftWithPreviousTrainingDefaults();
   return {
-    preCheckDraft: savedTodayPreCheckLog !== undefined ?
-      {...savedTodayPreCheckLog.input} : defaultPreCheckDraft,
-    preCheckDraftUpdated: savedTodayPreCheckLog === undefined,
-    savedPreCheckLogs: savedPreCheckLogs,
+    preCheckDraft: defaultPreCheckDraft,
+    preCheckDraftUpdated: true,
+    savedPreCheckLogs: [],
     status: "idle",
     error: null,
   };
@@ -184,8 +192,13 @@ const preCheckSlice = createSlice({
       );
     },
 
-    resetPreCheckDraft: () =>  {
-      return getInitialPreCheckState();
+    resetPreCheckDraft: (state) =>  {
+      const savedTodayLog = getTodayPreCheckLog(state.savedPreCheckLogs);
+      state.preCheckDraft = savedTodayLog === undefined
+        ? getPreCheckDraftWithPreviousTrainingDefaults()
+        : { ...savedTodayLog.input };
+      state.preCheckDraftUpdated = savedTodayLog === undefined;
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -197,16 +210,9 @@ const preCheckSlice = createSlice({
       .addCase(fetchTodayPreCheck.fulfilled, (state, action) => {
         state.status = "success";
         state.error = null;
+        state.savedPreCheckLogs = action.payload.logs;
 
         if (action.payload.todayLog === null) {
-          const savedTodayPreCheckLog = getTodayPreCheckLog(state.savedPreCheckLogs);
-
-          if (savedTodayPreCheckLog !== undefined) {
-            state.preCheckDraft = { ...savedTodayPreCheckLog.input };
-            state.preCheckDraftUpdated = false;
-            return;
-          }
-
           state.preCheckDraft = { ...action.payload.defaultDraft };
           state.preCheckDraftUpdated = true;
           return;
