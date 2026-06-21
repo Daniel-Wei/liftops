@@ -5,6 +5,11 @@ client/node_modules/
 client/dist/
 client/node_modules/.tmp/
 
+# Local Azure Functions settings and emulator state
+backend/**/local.settings.json
+**/__azurite_db_*.json
+.azurite/
+
 bin/
 obj/
 backend/**/bin/

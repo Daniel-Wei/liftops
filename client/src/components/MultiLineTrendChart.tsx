@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { TrendPoint } from "../types/appTypes";
 
 type MultiLineTrendSeries = {
@@ -13,6 +14,7 @@ type MultiLineTrendChartProps = {
   titleZh?: string;
   series: MultiLineTrendSeries[];
   xLabels?: string[];
+  controls?: ReactNode;
 };
 
 const chartWidth = 640;
@@ -77,15 +79,21 @@ export function MultiLineTrendChart({
   titleZh,
   series,
   xLabels: configuredXLabels,
+  controls,
 }: MultiLineTrendChartProps) {
   const visibleSeries = series.filter((line) => line.data.length > 0);
   const shouldShowSubtitle = isReadableSubtitle(titleZh);
 
   if (visibleSeries.length === 0) {
     return (
-      <div className="chart-card">
-        <p className="chart-title">{title}</p>
-        {shouldShowSubtitle ? <h2 className="chart-subtitle">{titleZh}</h2> : null}
+      <div className="chart-card chart-card--multi-line">
+        <div className="chart-title-row">
+          <div className="chart-heading-block">
+            <p className="chart-title">{title}</p>
+            {shouldShowSubtitle ? <h2 className="chart-subtitle">{titleZh}</h2> : null}
+            {controls ? <div className="chart-controls">{controls}</div> : null}
+          </div>
+        </div>
         <div className="chart-line-frame chart-line-frame--empty">
           <p className="muted-text">暂无趋势数据。</p>
         </div>
@@ -140,11 +148,12 @@ export function MultiLineTrendChart({
   }
 
   return (
-    <div className="chart-card">
+    <div className="chart-card chart-card--multi-line">
       <div className="chart-title-row">
-        <div>
+        <div className="chart-heading-block">
           <p className="chart-title">{title}</p>
           {shouldShowSubtitle ? <h2 className="chart-subtitle">{titleZh}</h2> : null}
+          {controls ? <div className="chart-controls">{controls}</div> : null}
         </div>
         <div className="chart-legend">
           {visibleSeries.map((line) => (
@@ -225,7 +234,7 @@ export function MultiLineTrendChart({
                       cy={point.y}
                       r="3"
                     />
-                    <title>{`${line.label}：${formatAxisValue(point.value)} 千克`}</title>
+                    <title>{`${line.label}：${formatAxisValue(point.value)} kg`}</title>
                   </g>
                 ))}
               </g>

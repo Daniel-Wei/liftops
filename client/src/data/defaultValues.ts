@@ -2,6 +2,7 @@ import type {
   ProgramSettings,
   PreCheckDetailsLog,
   TrainingSessionDetails,
+  TrendReportType,
 } from "../types/appTypes";
 import { getLocalDateString } from "../helpers/GenericHelpers";
 
@@ -32,3 +33,11 @@ export const initialTrainingSessionDetailsInput: TrainingSessionDetails = {
   sets: 3,
   weightKg: 60,
 };
+
+export const defaultReportTypeOptions: Array<{ value: TrendReportType; label: string }> = [
+  { value: "readiness", label: "练前状态分数趋势" },
+  { value: "sleep", label: "睡眠时长趋势" },
+  { value: "sessionLoad", label: "每周训练负荷" },
+  { value: "volume", label: "每周训练量" },
+  { value: "estimatedPr", label: "动作预计单次最大重量趋势" },
+];

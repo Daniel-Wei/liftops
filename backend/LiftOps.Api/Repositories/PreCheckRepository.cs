@@ -13,6 +13,16 @@ public sealed class PreCheckRepository : IPreCheckRepository
         return Task.FromResult(log);
     }
 
+    public Task<IReadOnlyList<PreCheckLog>> GetByDateRangeAsync(DateOnly from, DateOnly to)
+    {
+        var logs = _logsByDate.Values
+            .Where(log => log.Date >= from && log.Date <= to)
+            .OrderBy(log => log.Date)
+            .ToList();
+
+        return Task.FromResult<IReadOnlyList<PreCheckLog>>(logs);
+    }
+
     public Task<PreCheckLog> SaveAsync(PreCheckLog log)
     {
         _logsByDate.AddOrUpdate(log.Date, log, (_, _) => log);

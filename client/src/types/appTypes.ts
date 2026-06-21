@@ -354,6 +354,15 @@ export type TrainingSessionTextField =
   | "setRpe"
   | "rir";
 
+export type TrainableMuscleGroup = Exclude<MuscleGroup, "All">;
+
+export type TrendReportType =
+  | "readiness"
+  | "sleep"
+  | "sessionLoad"
+  | "volume"
+  | "estimatedPr";
+
 export type ExerciseSummary = {
   key: string;
   exerciseName: string;

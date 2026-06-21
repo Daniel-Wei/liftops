@@ -433,7 +433,7 @@ export function TrainingPage() {
           </label>
 
           <label className="training-form-field">
-            <span className="training-form-label">重量（千克）</span>
+            <span className="training-form-label">重量（kg）</span>
             <input
               className="training-input"
               type="number"
@@ -559,7 +559,7 @@ export function TrainingPage() {
                               <span className="training-group-title">日期：{formatDisplayDate(dayGroup.date)}</span>
                             </button>
                             <span className="training-group-summary">
-                              总体难度 {dayGroup.sessionRpe} · 共 {dayGroup.setCount} 组 · {dayGroup.workingSetCount} 组正式组 · {dayGroup.hardSetCount} 组高强度组 · 总训练量 {formatWholeNumber(dayGroup.volumeLoad)} 千克 · 正式组训练量 {formatWholeNumber(dayGroup.workingVolumeLoad)} 千克
+                              总体难度 {dayGroup.sessionRpe} · 共 {dayGroup.setCount} 组 · {dayGroup.workingSetCount} 组正式组 · {dayGroup.hardSetCount} 组高强度组 · 总训练量 {formatWholeNumber(dayGroup.volumeLoad)} kg · 正式组训练量 {formatWholeNumber(dayGroup.workingVolumeLoad)} kg
                             </span>
                             <span className="signal-chip">{dayGroup.workingSetCount} 组正式组</span>
                           </div>
@@ -587,7 +587,7 @@ export function TrainingPage() {
                                     <span className="training-group-title">肌群：{getMuscleGroupDisplayLabel(muscleGroup.muscleGroup)}</span>
                                   </button>
                                   <span className="training-group-summary">
-                                    共 {muscleGroup.setCount} 组 · {muscleGroup.workingSetCount} 组正式组 · {muscleGroup.hardSetCount} 组高强度组 · 总训练量 {formatWholeNumber(muscleGroup.volumeLoad)} 千克 · 正式组训练量 {formatWholeNumber(muscleGroup.workingVolumeLoad)} 千克
+                                    共 {muscleGroup.setCount} 组 · {muscleGroup.workingSetCount} 组正式组 · {muscleGroup.hardSetCount} 组高强度组 · 总训练量 {formatWholeNumber(muscleGroup.volumeLoad)} kg · 正式组训练量 {formatWholeNumber(muscleGroup.workingVolumeLoad)} kg
                                   </span>
                                 </div>
                               </th>
@@ -601,8 +601,8 @@ export function TrainingPage() {
                                 <td>{exercise.setCount}</td>
                                 <td>{exercise.workingSetCount}</td>
                                 <td>{exercise.hardSetCount}</td>
-                                <td>{formatWholeNumber(exercise.volumeLoad)} 千克</td>
-                                <td>{formatWholeNumber(exercise.workingVolumeLoad)} 千克</td>
+                                <td>{formatWholeNumber(exercise.volumeLoad)} kg</td>
+                                <td>{formatWholeNumber(exercise.workingVolumeLoad)} kg</td>
                                 <td>
                                   <button
                                     type="button"
@@ -638,7 +638,7 @@ export function TrainingPage() {
                 <div className="saved-session-actions">
                   <span className="signal-chip">{summary.hardSets} 组高强度组</span>
                   <span className="signal-chip signal-chip--muted">
-                    {formatWholeNumber(summary.volumeLoad)} 千克
+                    {formatWholeNumber(summary.volumeLoad)} kg
                   </span>
                 </div>
               </article>

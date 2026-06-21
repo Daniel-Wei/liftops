@@ -172,7 +172,7 @@ export function getTrainingFormError(form: TrainingSessionDetails) {
   }
 
   if (!Number.isFinite(form.weightKg) || form.weightKg < 0) {
-    return "重量必须大于或等于 0 千克。";
+    return "重量必须大于或等于 0 kg。";
   }
 
   if (form.rpe !== undefined && (!Number.isFinite(form.rpe) || form.rpe < 1 || form.rpe > 10)) {
@@ -266,7 +266,7 @@ export function buildRealTrainingMetrics(trainingSessions: TrainingSession[]): M
     {
       label: "Saved Total Volume",
       labelZh: "已保存总训练量",
-      value: `${formatWholeNumber(volumeLoad)} 千克`,
+      value: `${formatWholeNumber(volumeLoad)} kg`,
       trend: volumeLoad > 0 ? TrendDirection.Up : TrendDirection.Stable,
       status: volumeLoad > 0 ? MetricStatus.Good : MetricStatus.Neutral,
       evidenceType: EvidenceType.Established,
@@ -276,7 +276,7 @@ export function buildRealTrainingMetrics(trainingSessions: TrainingSession[]): M
     {
       label: "Saved Working Volume",
       labelZh: "已保存正式组训练量",
-      value: `${formatWholeNumber(workingVolumeLoad)} 千克`,
+      value: `${formatWholeNumber(workingVolumeLoad)} kg`,
       trend: workingVolumeLoad > 0 ? TrendDirection.Up : TrendDirection.Stable,
       status: workingVolumeLoad > 0 ? MetricStatus.Good : MetricStatus.Neutral,
       evidenceType: EvidenceType.Established,

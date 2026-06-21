@@ -26,8 +26,33 @@ const presetTrainingTrendWeeks: TrainingTrendWeek[] = [
   { label: "W8", startDate: "2026-06-15", endDate: "2026-06-21" },
 ];
 
-export function getTrainingTrendWeeks() {
-  return presetTrainingTrendWeeks;
+function addDays(date: string, days: number) {
+  const nextDate = new Date(`${date}T00:00:00Z`);
+  nextDate.setUTCDate(nextDate.getUTCDate() + days);
+  return nextDate.toISOString().slice(0, 10);
+}
+
+export function getTrainingTrendWeeks(
+  startWeek = presetTrainingTrendWeeks[0].startDate,
+  endWeek = presetTrainingTrendWeeks[presetTrainingTrendWeeks.length - 1].startDate,
+) {
+  if (startWeek > endWeek) {
+    return [];
+  }
+
+  const weeks: TrainingTrendWeek[] = [];
+  let weekStart = startWeek;
+
+  while (weekStart <= endWeek) {
+    weeks.push({
+      label: `W${weeks.length + 1}`,
+      startDate: weekStart,
+      endDate: addDays(weekStart, 6),
+    });
+    weekStart = addDays(weekStart, 7);
+  }
+
+  return weeks;
 }
 
 export function isSessionInTrainingTrendWeek(
@@ -51,7 +76,7 @@ export function formatTrainingTrendWeekLabel(week: TrainingTrendWeek) {
 }
 
 export function formatTrainingTrendWeekShortLabel(week: TrainingTrendWeek) {
-  return `第 ${Number(week.label.replace("W", ""))} 周`;
+  return week.label;
 }
 
 function getSessionLoad(session: TrainingSession) {
@@ -96,8 +121,11 @@ function getSetEstimatedPr(weightKg: number, reps: number) {
   return weightKg * (1 + (reps / 30));
 }
 
-function getWeekForSession(session: TrainingSession) {
-  return presetTrainingTrendWeeks.find((week) => (
+function getWeekForSession(
+  session: TrainingSession,
+  weeks: TrainingTrendWeek[] = presetTrainingTrendWeeks,
+) {
+  return weeks.find((week) => (
     session.date >= week.startDate && session.date <= week.endDate
   ));
 }
@@ -105,11 +133,12 @@ function getWeekForSession(session: TrainingSession) {
 function getWeekGroupedTrainingTrend(
   trainingSessions: TrainingSession[],
   getSessionValue: (session: TrainingSession) => number,
+  weeks: TrainingTrendWeek[] = presetTrainingTrendWeeks,
 ): TrendPoint[] {
   const valueByWeekLabel = new Map<string, number>();
 
   trainingSessions.forEach((session) => {
-    const week = getWeekForSession(session);
+    const week = getWeekForSession(session, weeks);
 
     if (!week) {
       return;
@@ -121,7 +150,7 @@ function getWeekGroupedTrainingTrend(
     );
   });
 
-  return presetTrainingTrendWeeks
+  return weeks
     .filter((week) => valueByWeekLabel.has(week.label))
     .map((week) => ({
       label: formatTrainingTrendWeekShortLabel(week),
@@ -132,11 +161,12 @@ function getWeekGroupedTrainingTrend(
 function getWeekGroupedMaxTrainingTrend(
   trainingSessions: TrainingSession[],
   getSessionValue: (session: TrainingSession) => number,
+  weeks: TrainingTrendWeek[] = presetTrainingTrendWeeks,
 ): TrendPoint[] {
   const valueByWeekLabel = new Map<string, number>();
 
   trainingSessions.forEach((session) => {
-    const week = getWeekForSession(session);
+    const week = getWeekForSession(session, weeks);
 
     if (!week) {
       return;
@@ -148,7 +178,7 @@ function getWeekGroupedMaxTrainingTrend(
     );
   });
 
-  return presetTrainingTrendWeeks
+  return weeks
     .filter((week) => valueByWeekLabel.has(week.label))
     .map((week) => ({
       label: formatTrainingTrendWeekShortLabel(week),
@@ -225,15 +255,66 @@ function getWeeklyMainLiftEstimatedPrTrend(
     }));
 }
 
-export function getWeeklySessionLoadTrend(trainingSessions: TrainingSession[]): TrendPoint[] {
+export function getWeeklyExerciseEstimatedPrTrend(
+  trainingSessions: TrainingSession[],
+  exerciseName: string,
+  weeks: TrainingTrendWeek[] = presetTrainingTrendWeeks,
+  muscleGroup?: MuscleGroup,
+) {
+  const valueByWeekLabel = new Map<string, number>();
+
+  trainingSessions.forEach((session) => {
+    const week = getWeekForSession(session, weeks);
+
+    if (!week) {
+      return;
+    }
+
+    session.sets.forEach((set) => {
+      if (
+        set.exerciseName !== exerciseName
+        || (muscleGroup !== undefined && set.muscleGroup !== muscleGroup)
+        || set.isWarmup
+        || set.weightKg <= 0
+        || set.reps <= 0
+      ) {
+        return;
+      }
+
+      valueByWeekLabel.set(
+        week.label,
+        Math.max(
+          valueByWeekLabel.get(week.label) ?? 0,
+          getSetEstimatedPr(set.weightKg, set.reps),
+        ),
+      );
+    });
+  });
+
+  return weeks
+    .filter((week) => valueByWeekLabel.has(week.label))
+    .map((week) => ({
+      label: formatTrainingTrendWeekShortLabel(week),
+      value: Math.round(valueByWeekLabel.get(week.label) ?? 0),
+    }));
+}
+
+export function getWeeklySessionLoadTrend(
+  trainingSessions: TrainingSession[],
+  weeks: TrainingTrendWeek[] = presetTrainingTrendWeeks,
+): TrendPoint[] {
   return getWeekGroupedTrainingTrend(
     getLatestSessionRecordPerTrainingDay(trainingSessions),
     getSessionLoad,
+    weeks,
   );
 }
 
-export function getWeeklyVolumeLoadTrend(trainingSessions: TrainingSession[]): TrendPoint[] {
-  return getWeekGroupedTrainingTrend(trainingSessions, getSessionVolumeLoad);
+export function getWeeklyVolumeLoadTrend(
+  trainingSessions: TrainingSession[],
+  weeks: TrainingTrendWeek[] = presetTrainingTrendWeeks,
+): TrendPoint[] {
+  return getWeekGroupedTrainingTrend(trainingSessions, getSessionVolumeLoad, weeks);
 }
 
 export function getWeeklyEstimatedPrTrend(trainingSessions: TrainingSession[]): TrendPoint[] {

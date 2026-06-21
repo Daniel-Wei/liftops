@@ -7,5 +7,12 @@
         "excludedTypes": "Request"
       }
     }
+  },
+  "extensions": {
+    "serviceBus": {
+      "prefetchCount": 0,
+      "maxConcurrentCalls": 4,
+      "maxAutoLockRenewalDuration": "00:05:00"
+    }
   }
 }

@@ -23,6 +23,9 @@ var host = new HostBuilder()
         services.AddSingleton<ITrainingLogRepository, TrainingLogRepository>();
         services.AddSingleton<IPreCheckService, PreCheckService>();
         services.AddSingleton<ITrainingSessionService, TrainingSessionService>();
+        services.AddSingleton<ITrendReportJobRepository, TableTrendReportJobRepository>();
+        services.AddSingleton<ITrendReportQueue, ServiceBusTrendReportQueue>();
+        services.AddSingleton<ITrendReportService, TrendReportService>();
     })
     .Build();
 
