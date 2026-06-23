@@ -1,7 +1,7 @@
 import type {
   ProgramSettings,
   PreCheckDetailsLog,
-  TrainingSessionDetails,
+  TrainingSessionDraft,
   TrendReportType,
 } from "../types/appTypes";
 import { getLocalDateString } from "../helpers/GenericHelpers";
@@ -23,15 +23,26 @@ export const initialPreCheckDetailsInput: PreCheckDetailsLog = {
   previousSessionDurationMinutes: 60,
 };
 
-export const initialTrainingSessionDetailsInput: TrainingSessionDetails = {
+export const initialTrainingSessionDetailsInput: TrainingSessionDraft = {
   date: getLocalDateString(),
-  exerciseName: "Bench Press",
-  primaryMuscleGroup: "Chest",
-  isWarmup: false,
-  reps: 8,
+  startTime: "18:00",
+  durationMinutes: 60,
   sessionRpe: 7,
-  sets: 3,
-  weightKg: 60,
+  exercises: [
+    {
+      id: "draft-exercise-1",
+      exerciseName: "Bench Press",
+      muscleGroup: "Chest",
+      sets: [
+        {
+          id: "draft-set-1",
+          isWarmup: false,
+          reps: 8,
+          weightKg: 60,
+        },
+      ],
+    },
+  ],
 };
 
 export const defaultReportTypeOptions: Array<{ value: TrendReportType; label: string }> = [

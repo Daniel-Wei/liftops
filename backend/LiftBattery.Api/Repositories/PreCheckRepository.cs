@@ -26,7 +26,7 @@ public sealed class PreCheckRepository : IPreCheckRepository
         CancellationToken cancellationToken = default)
     {
         var entity = await _dbContext.PreChecks
-            .AsNoTracking()
+            .AsNoTracking() // read-only, no need to monitor changes
             .SingleOrDefaultAsync(
                 item => item.UserId == userId && item.PreCheckDate == date,
                 cancellationToken);
@@ -40,7 +40,7 @@ public sealed class PreCheckRepository : IPreCheckRepository
         CancellationToken cancellationToken = default)
     {
         var entities = await _dbContext.PreChecks
-            .AsNoTracking()
+            .AsNoTracking()  // read-only, no need to monitor changes
             .Where(item => item.UserId == userId)
             .Where(item => item.PreCheckDate >= from && item.PreCheckDate <= to)
             .OrderBy(item => item.PreCheckDate)

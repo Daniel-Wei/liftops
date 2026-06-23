@@ -10,7 +10,6 @@ import {
 } from "../../helpers/PreCheckHelpers";
 import {
   getLatestTrainingDayDetails,
-  loadSavedTrainingSessions,
 } from "../../helpers/TrainingPageHelpers";
 import { getTodayDate } from "../../helpers/GenericHelpers";
 import {
@@ -19,9 +18,9 @@ import {
   savePreCheck as savePreCheckToApi,
   deletePreCheck as deletePreCheckFromApi,
 } from "../../api/preCheckApi";
-import { getTrainingSessions as getTrainingSessionsFromApi } from "../../api/trainingSessionApi";
+import { getTrainingDays as getTrainingDaysFromApi } from "../../api/trainingSessionApi";
 import { fromPreCheckDto, toPreCheckDto } from "../../api/preCheckDtoMapping";
-import { fromTrainingDto } from "../../api/trainingSessionDtoMapping";
+import { flattenTrainingDays, fromTrainingDayDto } from "../../api/trainingSessionDtoMapping";
 import { RequestStatus } from "./sliceHelpers";
 
 type UpdatePreCheckDetailsPayload = {
@@ -62,7 +61,7 @@ function getDateDaysAgo(daysAgo: number) {
   return date.toISOString().slice(0, 10);
 }
 
-function getPreCheckDraftWithPreviousTrainingDefaults(trainingSessions = loadSavedTrainingSessions()) {
+function getPreCheckDraftWithPreviousTrainingDefaults(trainingSessions: ReturnType<typeof flattenTrainingDays> = []) {
   const latestTrainingDay = getLatestTrainingDayDetails(trainingSessions);
 
   if (latestTrainingDay === null) {
@@ -78,13 +77,8 @@ function getPreCheckDraftWithPreviousTrainingDefaults(trainingSessions = loadSav
 async function getBackendPreviousTrainingDefaultDraft() {
   const to = getTodayDate();
   const from = getDateDaysAgo(previousTrainingLookbackDays);
-  const backendTrainingSessions = (await getTrainingSessionsFromApi(from, to)).map(fromTrainingDto);
-  const localTrainingSessions = loadSavedTrainingSessions();
-
-  return getPreCheckDraftWithPreviousTrainingDefaults([
-    ...localTrainingSessions,
-    ...backendTrainingSessions,
-  ]);
+  const trainingDays = (await getTrainingDaysFromApi(from, to)).map(fromTrainingDayDto);
+  return getPreCheckDraftWithPreviousTrainingDefaults(flattenTrainingDays(trainingDays));
 }
 
 // (Return type, Argument type, Thunk api config)

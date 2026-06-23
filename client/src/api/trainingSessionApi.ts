@@ -1,14 +1,13 @@
 import { requestJson } from "./httpClient";
-import type { TrainingSessionDto } from "./dtos";
+import type { SaveTrainingSessionDto, TrainingDayDto, TrainingSessionDto } from "./dtos";
 
-export function getTrainingSessions(from: string, to: string) {
+export function getTrainingDays(from: string, to: string) {
   const query = new URLSearchParams({ from, to });
-
-  return requestJson<TrainingSessionDto[]>(`/trainingsessions?${query.toString()}`);
+  return requestJson<TrainingDayDto[]>(`/trainingdays?${query.toString()}`);
 }
 
-export function saveTrainingSession(dto: TrainingSessionDto) {
-  return requestJson<TrainingSessionDto>("/trainingsessions", {
+export function saveTrainingSession(dto: SaveTrainingSessionDto) {
+  return requestJson<TrainingDayDto>("/trainingdays/sessions", {
     method: "POST",
     body: dto,
   });

@@ -1,137 +1,190 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type {
-  TrainingSession,
-  TrainingSessionDetails,
+  MuscleGroup,
+  TrainingDay,
+  TrainingExerciseDraft,
+  TrainingSessionDraft,
+  TrainingSetDraft,
 } from "../../types/appTypes";
-import { loadSavedTrainingSessions } from "../../helpers/TrainingPageHelpers";
-import { getTrainingSessions } from "../../api/trainingSessionApi";
-import { RequestStatus } from "./sliceHelpers";
-import { fromTrainingDto, toTrainingSessionDto } from "../../api/trainingSessionDtoMapping";
+import { getDefaultExerciseForMuscleGroup } from "../../data/programValues";
 import { initialTrainingSessionDetailsInput } from "../../data/defaultValues";
-import { 
-  saveTrainingSession as saveTrainingSessionToApi,
+import { createId } from "../../helpers/GenericHelpers";
+import { fromTrainingDayDto, toSaveTrainingSessionDto } from "../../api/trainingSessionDtoMapping";
+import {
   deleteTrainingSession as deleteTrainingSessionFromApi,
+  getTrainingDays,
+  saveTrainingSession as saveTrainingSessionToApi,
 } from "../../api/trainingSessionApi";
-
-type UpdateTrainingSessionDetailsPayload = {
-  [Field in keyof TrainingSessionDetails] -?: {
-    field: Field;
-    value: TrainingSessionDetails[Field];
-  };
-}[keyof TrainingSessionDetails];
-
-type TrainingPendingOperation = "fetch" | "save" | "delete";
-
-function updateDraftField<Field extends keyof TrainingSessionDetails>(
-  draft: TrainingSessionDetails,
-  field: Field,
-  value: TrainingSessionDetails[Field],
-) {
-  draft[field] = value;
-}
+import type { RequestStatus } from "./sliceHelpers";
 
 type TrainingState = {
-  trainingSessionDraft: TrainingSessionDetails;
-  trainingSessions: TrainingSession[],
-  status: RequestStatus,
-  error: string | null,
-  pendingOperation: TrainingPendingOperation | null,
-  pendingMessage: string | null,
-  successMessage: string | null,
-  operationErrorMessage: string | null,
+  trainingSessionDraft: TrainingSessionDraft;
+  trainingDays: TrainingDay[];
+  status: RequestStatus;
+  error: string | null;
+  pendingMessage: string | null;
+  successMessage: string | null;
+  operationErrorMessage: string | null;
 };
 
-const artificialTrainingRequestDelayMs = 700;
+const initialState: TrainingState = {
+  trainingSessionDraft: structuredClone(initialTrainingSessionDetailsInput),
+  trainingDays: [],
+  status: "idle",
+  error: null,
+  pendingMessage: null,
+  successMessage: null,
+  operationErrorMessage: null,
+};
 
-function waitForTrainingRequestDelay() {
-  return new Promise<void>((resolve) => {
-    window.setTimeout(resolve, artificialTrainingRequestDelayMs);
-  });
-}
-
-function getInitialTrainingState(): TrainingState {
-  const savedTrainingSessions = [...loadSavedTrainingSessions()];
-  return {
-    trainingSessionDraft: initialTrainingSessionDetailsInput,
-    trainingSessions: savedTrainingSessions,
-    status: "idle",
-    error: null,
-    pendingOperation: null,
-    pendingMessage: null,
-    successMessage: null,
-    operationErrorMessage: null,
-  };
-}
-
-// (Return type, Argument type, Thunk api config)
-export const fetchTrainingSessions = createAsyncThunk<
-  TrainingSession[], 
-  {from: string, to: string}, 
+export const fetchTrainingDays = createAsyncThunk<
+  TrainingDay[],
+  { from: string; to: string },
   { rejectValue: string }
->(
-  "training/getTrainingSessions", // type prefix: pending, fulfilled, rejected generated
-  async (payload, thunkApi) => {
-    try {
-      await waitForTrainingRequestDelay();
-      const { from, to } = payload;
-      const dto = await getTrainingSessions(from, to);
-      return dto.map(fromTrainingDto);
-    } catch {
-      return thunkApi.rejectWithValue("无法读取训练记录，请稍后重试。");
-    }
-  },
-);
+>("training/fetchTrainingDays", async ({ from, to }, thunkApi) => {
+  try {
+    return (await getTrainingDays(from, to)).map(fromTrainingDayDto);
+  } catch {
+    return thunkApi.rejectWithValue("无法读取训练记录，请稍后重试。");
+  }
+});
 
 export const saveTrainingSession = createAsyncThunk<
-  TrainingSession,
+  TrainingDay,
   void,
   { state: { training: TrainingState }; rejectValue: string }
->(
-  "training/saveTrainingSession",
-  async (_payload, thunkApi) => {
-    const state = thunkApi.getState();
-
-    try {
-      await waitForTrainingRequestDelay();
-      const dto = toTrainingSessionDto(state.training.trainingSessionDraft);
-      const savedDto = await saveTrainingSessionToApi(dto);
-      return fromTrainingDto(savedDto);
-    } catch {
-      return thunkApi.rejectWithValue("无法保存训练动作，请稍后重试。");
-    }
-  },
-);
+>("training/saveTrainingSession", async (_payload, thunkApi) => {
+  try {
+    const dto = toSaveTrainingSessionDto(thunkApi.getState().training.trainingSessionDraft);
+    return fromTrainingDayDto(await saveTrainingSessionToApi(dto));
+  } catch {
+    return thunkApi.rejectWithValue("无法保存训练 Session，请稍后重试。");
+  }
+});
 
 export const deleteTrainingSession = createAsyncThunk<
   string,
   string,
   { rejectValue: string }
->(
-  "training/deleteTrainingSession",
-  async (id, thunkApi) => {
-    try {
-      await waitForTrainingRequestDelay();
-      await deleteTrainingSessionFromApi(id);
-      return id;
-    } catch {
-      return thunkApi.rejectWithValue("无法删除训练动作，请稍后重试。");
-    }
-  },
-);
+>("training/deleteTrainingSession", async (id, thunkApi) => {
+  try {
+    await deleteTrainingSessionFromApi(id);
+    return id;
+  } catch {
+    return thunkApi.rejectWithValue("无法删除训练 Session，请稍后重试。");
+  }
+});
 
 const trainingSlice = createSlice({
   name: "training",
-  initialState: getInitialTrainingState(),
+  initialState,
   reducers: {
     updateTrainingSessionDraft: (
       state,
-      action: PayloadAction<UpdateTrainingSessionDetailsPayload>,
+      action: PayloadAction<{
+        field: "date" | "startTime" | "durationMinutes" | "sessionRpe";
+        value: string | number;
+      }>,
     ) => {
-      updateDraftField(
-        state.trainingSessionDraft,
-        action.payload.field,
-        action.payload.value,
-      );
+      const { field, value } = action.payload;
+
+      if (field === "date" || field === "startTime") {
+        state.trainingSessionDraft[field] = String(value);
+      } else {
+        state.trainingSessionDraft[field] = Number(value);
+      }
+    },
+    addTrainingExercise: (state) => {
+      const muscleGroup: Exclude<MuscleGroup, "All"> = "Chest";
+      state.trainingSessionDraft.exercises.push({
+        id: createId("draft-exercise"),
+        muscleGroup,
+        exerciseName: getDefaultExerciseForMuscleGroup(muscleGroup),
+        sets: [{
+          id: createId("draft-set"),
+          reps: 8,
+          weightKg: 60,
+          isWarmup: false,
+        }],
+      });
+    },
+    removeTrainingExercise: (state, action: PayloadAction<string>) => {
+      if (state.trainingSessionDraft.exercises.length > 1) {
+        state.trainingSessionDraft.exercises = state.trainingSessionDraft.exercises
+          .filter((exercise) => exercise.id !== action.payload);
+      }
+    },
+    updateTrainingExercise: (
+      state,
+      action: PayloadAction<{
+        exerciseId: string;
+        field: "muscleGroup" | "exerciseName";
+        value: string;
+      }>,
+    ) => {
+      const exercise = state.trainingSessionDraft.exercises
+        .find((candidate) => candidate.id === action.payload.exerciseId);
+
+      if (!exercise) return;
+
+      if (action.payload.field === "muscleGroup") {
+        const muscleGroup = action.payload.value as TrainingExerciseDraft["muscleGroup"];
+        exercise.muscleGroup = muscleGroup;
+        exercise.exerciseName = getDefaultExerciseForMuscleGroup(muscleGroup);
+      } else {
+        exercise.exerciseName = action.payload.value;
+      }
+    },
+    addTrainingSet: (state, action: PayloadAction<string>) => {
+      const exercise = state.trainingSessionDraft.exercises
+        .find((candidate) => candidate.id === action.payload);
+
+      if (!exercise) return;
+
+      const previous = exercise.sets[exercise.sets.length - 1];
+      exercise.sets.push({
+        id: createId("draft-set"),
+        reps: previous?.reps ?? 8,
+        weightKg: previous?.weightKg ?? 60,
+        rpe: previous?.rpe,
+        rir: previous?.rir,
+        isWarmup: previous?.isWarmup ?? false,
+      });
+    },
+    removeTrainingSet: (
+      state,
+      action: PayloadAction<{ exerciseId: string; setId: string }>,
+    ) => {
+      const exercise = state.trainingSessionDraft.exercises
+        .find((candidate) => candidate.id === action.payload.exerciseId);
+
+      if (exercise && exercise.sets.length > 1) {
+        exercise.sets = exercise.sets.filter((set) => set.id !== action.payload.setId);
+      }
+    },
+    updateTrainingSet: (
+      state,
+      action: PayloadAction<{
+        exerciseId: string;
+        setId: string;
+        field: keyof Omit<TrainingSetDraft, "id">;
+        value: number | boolean | undefined;
+      }>,
+    ) => {
+      const set = state.trainingSessionDraft.exercises
+        .find((exercise) => exercise.id === action.payload.exerciseId)
+        ?.sets.find((candidate) => candidate.id === action.payload.setId);
+
+      if (!set) return;
+      const { field, value } = action.payload;
+
+      if (field === "isWarmup") {
+        set.isWarmup = Boolean(value);
+      } else if (field === "rpe" || field === "rir") {
+        set[field] = value === undefined ? undefined : Number(value);
+      } else {
+        set[field] = Number(value);
+      }
     },
     clearTrainingSuccessMessage: (state) => {
       state.successMessage = null;
@@ -141,93 +194,65 @@ const trainingSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-      builder
-        .addCase(fetchTrainingSessions.pending, (state) => {
-          state.status = "loading";
-          state.error = null;
-          state.pendingOperation = "fetch";
-          state.pendingMessage = "正在读取训练记录...";
-          state.successMessage = null;
-          state.operationErrorMessage = null;
-        })
-        .addCase(fetchTrainingSessions.fulfilled, (state, action) => {
-          state.status = "success";
-          state.error = null;
-          state.pendingOperation = null;
-          state.pendingMessage = null;
-          state.successMessage = "训练记录已加载";
-          state.operationErrorMessage = null;
-  
-          state.trainingSessions = action.payload;
-        })
-        .addCase(fetchTrainingSessions.rejected, (state, action) => {
-          const errorMessage = action.payload ?? "无法读取训练记录，请稍后重试。";
-          state.status = "error";
-          state.pendingOperation = null;
-          state.pendingMessage = null;
-          state.successMessage = null;
-          state.error = errorMessage;
-          state.operationErrorMessage = errorMessage;
-        })
-        .addCase(saveTrainingSession.pending, (state) => {
-          state.status = "saving";
-          state.error = null;
-          state.pendingOperation = "save";
-          state.pendingMessage = "正在保存训练动作...";
-          state.successMessage = null;
-          state.operationErrorMessage = null;
-        })
-        .addCase(saveTrainingSession.fulfilled, (state, action) => {
-          state.status = "success";
-          state.error = null;
-          state.pendingOperation = null;
-          state.pendingMessage = null;
-          state.successMessage = "训练动作已保存";
-          state.operationErrorMessage = null;
-          state.trainingSessions.push(action.payload);
-        })
-        .addCase(saveTrainingSession.rejected, (state, action) => {
-          const errorMessage = action.payload ?? "无法保存训练动作，请稍后重试。";
-          state.status = "error";
-          state.pendingOperation = null;
-          state.pendingMessage = null;
-          state.successMessage = null;
-          state.error = errorMessage;
-          state.operationErrorMessage = errorMessage;
-        })
-        .addCase(deleteTrainingSession.pending, (state) => {
-          state.status = "saving";
-          state.error = null;
-          state.pendingOperation = "delete";
-          state.pendingMessage = "正在删除训练动作...";
-          state.successMessage = null;
-          state.operationErrorMessage = null;
-        })
-        .addCase(deleteTrainingSession.fulfilled, (state, action) => {
-          state.status = "success";
-          state.error = null;
-          state.pendingOperation = null;
-          state.pendingMessage = null;
-          state.successMessage = "训练动作已删除";
-          state.operationErrorMessage = null;
-          state.trainingSessions = state.trainingSessions.filter(ts => ts.id !== action.payload);
-        })
-        .addCase(deleteTrainingSession.rejected, (state, action) => {
-          const errorMessage = action.payload ?? "无法删除训练动作，请稍后重试。";
-          state.status = "error";
-          state.pendingOperation = null;
-          state.pendingMessage = null;
-          state.successMessage = null;
-          state.error = errorMessage;
-          state.operationErrorMessage = errorMessage;
-        });
-      }
+    builder
+      .addCase(fetchTrainingDays.pending, (state) => {
+        state.status = "loading";
+        state.pendingMessage = "正在读取训练记录...";
+        state.operationErrorMessage = null;
+      })
+      .addCase(fetchTrainingDays.fulfilled, (state, action) => {
+        state.status = "success";
+        state.trainingDays = action.payload;
+        state.pendingMessage = null;
+      })
+      .addCase(fetchTrainingDays.rejected, (state, action) => {
+        state.status = "error";
+        state.pendingMessage = null;
+        state.operationErrorMessage = action.payload ?? "无法读取训练记录。";
+      })
+      .addCase(saveTrainingSession.pending, (state) => {
+        state.status = "saving";
+        state.pendingMessage = "正在保存完整 Session...";
+        state.operationErrorMessage = null;
+      })
+      .addCase(saveTrainingSession.fulfilled, (state, action) => {
+        state.status = "success";
+        state.pendingMessage = null;
+        state.successMessage = "训练 Session 已保存";
+        const index = state.trainingDays.findIndex((day) => day.id === action.payload.id);
+
+        if (index >= 0) state.trainingDays[index] = action.payload;
+        else state.trainingDays.push(action.payload);
+
+        state.trainingSessionDraft = structuredClone(initialTrainingSessionDetailsInput);
+      })
+      .addCase(saveTrainingSession.rejected, (state, action) => {
+        state.status = "error";
+        state.pendingMessage = null;
+        state.operationErrorMessage = action.payload ?? "无法保存训练 Session。";
+      })
+      .addCase(deleteTrainingSession.fulfilled, (state, action) => {
+        state.trainingDays = state.trainingDays
+          .map((day) => ({
+            ...day,
+            sessions: day.sessions.filter((session) => session.id !== action.payload),
+          }))
+          .filter((day) => day.sessions.length > 0);
+        state.successMessage = "训练 Session 已删除";
+      });
+  },
 });
 
 export const {
+  addTrainingExercise,
+  addTrainingSet,
   clearTrainingErrorMessage,
   clearTrainingSuccessMessage,
+  removeTrainingExercise,
+  removeTrainingSet,
+  updateTrainingExercise,
   updateTrainingSessionDraft,
+  updateTrainingSet,
 } = trainingSlice.actions;
 
 export const trainingSliceReducer = trainingSlice.reducer;

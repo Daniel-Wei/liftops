@@ -44,6 +44,7 @@ public sealed class TrendReportService : ITrendReportService
     private readonly IPreCheckRepository _preCheckRepository;
     private readonly ITrendReportQueue _queue;
     private readonly int _demoDelayMilliseconds;
+    private readonly string _defaultUserId;
 
     public TrendReportService(
         ITrendReportJobRepository jobRepository,
@@ -61,6 +62,7 @@ public sealed class TrendReportService : ITrendReportService
             out var configuredDelay)
                 ? Math.Clamp(configuredDelay, 0, 10_000)
                 : 0;
+        _defaultUserId = configuration["PreCheck:DefaultUserId"] ?? "demo-user";
     }
 
     // Synchronous producer path:
@@ -74,7 +76,8 @@ public sealed class TrendReportService : ITrendReportService
 
         // Load the database records used for the submission-time snapshot.
         var rangeEnd = validatedRequest.EndWeek.AddDays(6);
-        var trainingSessions = await _trainingRepository.GetByDateRangeAsync(
+        var trainingDays = await _trainingRepository.GetByDateRangeAsync(
+            _defaultUserId,
             validatedRequest.StartWeek,
             rangeEnd);
         var preCheckLogs = await _preCheckRepository.GetByDateRangeAsync(
@@ -88,7 +91,7 @@ public sealed class TrendReportService : ITrendReportService
             "等待后台处理",
             validatedRequest,
             // The request stores user selections; the snapshot stores database data at submission time.
-            new TrendReportSnapshot(trainingSessions, preCheckLogs),
+            new TrendReportSnapshot(trainingDays, preCheckLogs),
             null,
             null,
             now,
@@ -253,7 +256,8 @@ public sealed class TrendReportService : ITrendReportService
         var selectionKeys = request.Selections
             .Select(selection => GetSelectionKey(selection.MuscleGroup, selection.ExerciseName))
             .ToHashSet(StringComparer.Ordinal);
-        var filteredSessions = snapshot.TrainingSessions
+        var trainingSessions = ToReportSessions(snapshot.TrainingDays);
+        var filteredSessions = trainingSessions
             .Select(session => session with
             {
                 Sets = session.Sets
@@ -300,7 +304,7 @@ public sealed class TrendReportService : ITrendReportService
 
         if (request.ReportTypes.Contains("estimatedPr", StringComparer.Ordinal))
         {
-            charts.Add(CreateEstimatedPrChart(weeks, snapshot.TrainingSessions, request.Selections));
+            charts.Add(CreateEstimatedPrChart(weeks, trainingSessions, request.Selections));
         }
 
         return new TrendReportResultDto(
@@ -346,7 +350,7 @@ public sealed class TrendReportService : ITrendReportService
 
     private static TrendReportChartDto CreateSessionLoadChart(
         IReadOnlyList<ReportWeek> weeks,
-        IReadOnlyList<TrainingSession> sessions)
+        IReadOnlyList<ReportTrainingSession> sessions)
     {
         var latestSessionPerDay = sessions
             .GroupBy(session => session.Date)
@@ -368,7 +372,7 @@ public sealed class TrendReportService : ITrendReportService
 
     private static TrendReportChartDto CreateVolumeChart(
         IReadOnlyList<ReportWeek> weeks,
-        IReadOnlyList<TrainingSession> sessions)
+        IReadOnlyList<ReportTrainingSession> sessions)
     {
         var points = weeks.Select(week => new TrendReportPointDto(
             week.Label,
@@ -387,7 +391,7 @@ public sealed class TrendReportService : ITrendReportService
 
     private static TrendReportChartDto CreateEstimatedPrChart(
         IReadOnlyList<ReportWeek> weeks,
-        IReadOnlyList<TrainingSession> sessions,
+        IReadOnlyList<ReportTrainingSession> sessions,
         IReadOnlyList<TrendReportSelectionDto> selections)
     {
         var series = selections.Select((selection, index) =>
@@ -444,6 +448,25 @@ public sealed class TrendReportService : ITrendReportService
         return weeks;
     }
 
+    private static IReadOnlyList<ReportTrainingSession> ToReportSessions(
+        IReadOnlyList<TrainingDay> days)
+    {
+        return days
+            .SelectMany(day => day.Sessions.Select(session => new ReportTrainingSession(
+                day.Date,
+                session.DurationMinutes,
+                session.SessionRpe,
+                session.Exercises.SelectMany(exercise => exercise.Sets.Select(set =>
+                    new ReportTrainingSet(
+                        exercise.MuscleGroup,
+                        exercise.ExerciseName,
+                        set.Reps,
+                        set.WeightKg,
+                        set.IsWarmup))).ToList(),
+                session.UpdatedAt)))
+            .ToList();
+    }
+
     private static decimal GetReadinessScore(PreCheckLog log)
     {
         var recoverySoreness = 6 - log.Soreness;
@@ -492,4 +515,18 @@ public sealed class TrendReportService : ITrendReportService
         string Label,
         DateOnly StartDate,
         DateOnly EndDate);
+
+    private sealed record ReportTrainingSession(
+        DateOnly Date,
+        int DurationMinutes,
+        decimal SessionRpe,
+        IReadOnlyList<ReportTrainingSet> Sets,
+        DateTimeOffset UpdatedAt);
+
+    private sealed record ReportTrainingSet(
+        string MuscleGroup,
+        string ExerciseName,
+        int Reps,
+        decimal WeightKg,
+        bool IsWarmup);
 }

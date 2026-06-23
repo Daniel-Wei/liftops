@@ -1,4 +1,4 @@
-import { PreCheckLog, MainDriver, MainDriverId, MetricStatus, MuscleGroup, PreCheckDetailsLog, ProgramSettings, ReadinessStatus, SetEntry, TrainingSession } from "./appTypes";
+import { PreCheckLog, MainDriver, MainDriverId, MetricStatus, MuscleGroup, PreCheckDetailsLog, ProgramSettings, ReadinessStatus, SetEntry } from "./appTypes";
 
 // #region: primitive type guards
 export function isStringKeyValuePairObjectRecord(value: unknown): value is Record<string, unknown> {
@@ -128,6 +128,7 @@ export function isSetEntry(value: unknown): value is SetEntry {
 
   return (
     isString(value.id)
+    && isNumber(value.setNumber)
     && isString(value.exerciseName)
     && isMuscleGroup(value.muscleGroup)
     && isNumber(value.reps)
@@ -135,6 +136,8 @@ export function isSetEntry(value: unknown): value is SetEntry {
     && (value.rpe === undefined || isNumber(value.rpe))
     && (value.rir === undefined || isNumber(value.rir))
     && isBoolean(value.isWarmup)
+    && isString(value.createdAt)
+    && isString(value.updatedAt)
   );
 }
 

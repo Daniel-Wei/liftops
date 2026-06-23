@@ -1,91 +1,150 @@
+using System.Globalization;
 using System.Net;
 using LiftBattery.Api.DTOs;
+using LiftBattery.Api.Options;
 using LiftBattery.Api.Services;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.Extensions.Options;
 
 namespace LiftBattery.Api.Functions;
 
 public sealed class TrainingLogFunctions
 {
-    private readonly ITrainingSessionService _service;
+    private const string UserIdHeader = "X-LiftBattery-User-Id";
 
-    public TrainingLogFunctions(ITrainingSessionService service)
+    private readonly ITrainingSessionService _service;
+    private readonly string _defaultUserId;
+
+    public TrainingLogFunctions(
+        ITrainingSessionService service,
+        IOptions<PreCheckOptions> options)
     {
         _service = service;
+        _defaultUserId = options.Value.DefaultUserId;
     }
 
-    [Function("GetTrainingSessions")]
-    public async Task<HttpResponseData> GetTrainingSessions(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "trainingsessions")] HttpRequestData request)
+    [Function("GetTrainingDays")]
+    public async Task<HttpResponseData> GetTrainingDays(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "trainingdays")] HttpRequestData request,
+        CancellationToken cancellationToken)
     {
-        var query = System.Web.HttpUtility.ParseQueryString(request.Url.Query);
-        var from = DateOnly.TryParse(query["from"], out var parsedFrom)
-            ? parsedFrom
-            : DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-7));
-        var to = DateOnly.TryParse(query["to"], out var parsedTo)
-            ? parsedTo
-            : DateOnly.FromDateTime(DateTime.UtcNow);
-
-        var logs = await _service.GetByDateRangeAsync(from, to);
-        var response = request.CreateResponse(HttpStatusCode.OK);
-        await response.WriteAsJsonAsync(logs);
-        return response;
+        try
+        {
+            var query = System.Web.HttpUtility.ParseQueryString(request.Url.Query);
+            var from = ParseDate(query["from"], "from");
+            var to = ParseDate(query["to"], "to");
+            var days = await _service.GetByDateRangeAsync(
+                GetUserId(request),
+                from,
+                to,
+                cancellationToken);
+            var response = request.CreateResponse(HttpStatusCode.OK);
+            await response.WriteAsJsonAsync(days, cancellationToken);
+            return response;
+        }
+        catch (ArgumentException exception)
+        {
+            return await WriteErrorAsync(request, HttpStatusCode.BadRequest, exception.Message, cancellationToken);
+        }
     }
 
     [Function("SaveTrainingSession")]
     public async Task<HttpResponseData> SaveTrainingSession(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "trainingsessions")] HttpRequestData request)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "trainingdays/sessions")] HttpRequestData request,
+        CancellationToken cancellationToken)
     {
-        var dto = await request.ReadFromJsonAsync<TrainingSessionDto>();
-
-        if (dto is null)
-        {
-            return await WriteErrorAsync(request, HttpStatusCode.BadRequest, "Training session body is required.");
-        }
-
         try
         {
-            var savedLog = await _service.SaveAsync(dto);
+            var dto = await request.ReadFromJsonAsync<SaveTrainingSessionDto>(cancellationToken);
+
+            if (dto is null)
+            {
+                return await WriteErrorAsync(
+                    request,
+                    HttpStatusCode.BadRequest,
+                    "Training session body is required.",
+                    cancellationToken);
+            }
+
+            var savedDay = await _service.SaveSessionAsync(GetUserId(request), dto, cancellationToken);
             var response = request.CreateResponse(HttpStatusCode.OK);
-            await response.WriteAsJsonAsync(savedLog);
+            await response.WriteAsJsonAsync(savedDay, cancellationToken);
             return response;
         }
-        catch (FormatException)
+        catch (ArgumentException exception)
         {
-            return await WriteErrorAsync(request, HttpStatusCode.BadRequest, "Training session date must use yyyy-MM-dd format.");
+            return await WriteErrorAsync(request, HttpStatusCode.BadRequest, exception.Message, cancellationToken);
         }
     }
 
     [Function("DeleteTrainingSession")]
     public async Task<HttpResponseData> DeleteTrainingSession(
         [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "trainingsessions/{id}")] HttpRequestData request,
-        string id)
+        string id,
+        CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(id))
+        try
         {
-            return await WriteErrorAsync(request, HttpStatusCode.BadRequest, "Training session id is required.");
+            var deleted = await _service.DeleteSessionAsync(GetUserId(request), id, cancellationToken);
+
+            if (deleted is null)
+            {
+                return await WriteErrorAsync(
+                    request,
+                    HttpStatusCode.NotFound,
+                    "Training session was not found.",
+                    cancellationToken);
+            }
+
+            var response = request.CreateResponse(HttpStatusCode.OK);
+            await response.WriteAsJsonAsync(deleted, cancellationToken);
+            return response;
+        }
+        catch (ArgumentException exception)
+        {
+            return await WriteErrorAsync(request, HttpStatusCode.BadRequest, exception.Message, cancellationToken);
+        }
+    }
+
+    private string GetUserId(HttpRequestData request)
+    {
+        if (request.Headers.TryGetValues(UserIdHeader, out var values))
+        {
+            var value = values.FirstOrDefault();
+
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
         }
 
-        var deletedLog = await _service.DeleteAsync(id);
+        return _defaultUserId;
+    }
 
-        if (deletedLog is null)
+    private static DateOnly ParseDate(string? value, string name)
+    {
+        if (!DateOnly.TryParseExact(
+            value,
+            "yyyy-MM-dd",
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.None,
+            out var date))
         {
-            return await WriteErrorAsync(request, HttpStatusCode.NotFound, "Training session was not found.");
+            throw new ArgumentException($"{name} must use yyyy-MM-dd format.");
         }
 
-        var response = request.CreateResponse(HttpStatusCode.OK);
-        await response.WriteAsJsonAsync(deletedLog);
-        return response;
+        return date;
     }
 
     private static async Task<HttpResponseData> WriteErrorAsync(
         HttpRequestData request,
         HttpStatusCode statusCode,
-        string message)
+        string message,
+        CancellationToken cancellationToken)
     {
         var response = request.CreateResponse(statusCode);
-        await response.WriteAsJsonAsync(new { message });
+        await response.WriteAsJsonAsync(new { message }, cancellationToken);
         return response;
     }
 }

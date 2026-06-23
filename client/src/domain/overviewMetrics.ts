@@ -8,7 +8,7 @@ import {
   type ProgramSettings,
   type ReadinessResult,
   type SetEntry,
-  type TrainingSession,
+  type TrainingSessionRecord,
 } from "../types/appTypes";
 
 // This file is intentionally React-free.
@@ -18,7 +18,7 @@ const HIGH_SESSION_LOAD_THRESHOLD = 600;
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 type DerivedOverviewMetricArgs = {
-  trainingSessions: TrainingSession[];
+  trainingSessions: TrainingSessionRecord[];
   programSettings: ProgramSettings;
   currentReadiness: ReadinessResult;
 };
@@ -35,7 +35,7 @@ function getDateTime(date: string) {
   return Number.isNaN(timestamp) ? 0 : timestamp;
 }
 
-function sortTrainingSessionsNewestFirst(trainingSessions: TrainingSession[]) {
+function sortTrainingSessionsNewestFirst(trainingSessions: TrainingSessionRecord[]) {
   return [...trainingSessions].sort((firstSession, secondSession) => (
     secondSession.date.localeCompare(firstSession.date)
     || secondSession.updatedAt.localeCompare(firstSession.updatedAt)
@@ -50,12 +50,12 @@ function formatRpe(value: number) {
   return Number.isInteger(value) ? value.toString() : value.toFixed(1);
 }
 
-export function getLatestTrainingSession(trainingSessions: TrainingSession[]) {
+export function getLatestTrainingSession(trainingSessions: TrainingSessionRecord[]) {
   return sortTrainingSessionsNewestFirst(trainingSessions)[0] ?? null;
 }
 
 // Uses the latest saved training session as the anchor for the 7-day training window.
-export function getTrainingSessionsInLast7Days(trainingSessions: TrainingSession[]) {
+export function getTrainingSessionsInLast7Days(trainingSessions: TrainingSessionRecord[]) {
   const latestSession = getLatestTrainingSession(trainingSessions);
 
   if (!latestSession) {
@@ -72,7 +72,7 @@ export function getTrainingSessionsInLast7Days(trainingSessions: TrainingSession
 }
 
 // Session load uses the common session-RPE formula: session RPE x session duration.
-export function getSessionLoad(session: TrainingSession) {
+export function getSessionLoad(session: TrainingSessionRecord) {
   return session.sessionRpe * session.durationMinutes;
 }
 
@@ -93,7 +93,7 @@ function isHardSet(set: SetEntry) {
 }
 
 export function getPriorityHardSetCount(
-  trainingSessions: TrainingSession[],
+  trainingSessions: TrainingSessionRecord[],
   priorityMuscles: MuscleGroup[],
 ) {
   return trainingSessions.reduce((sessionTotal, session) => {
@@ -105,7 +105,7 @@ export function getPriorityHardSetCount(
   }, 0);
 }
 
-export function getTopSetEffort(trainingSessions: TrainingSession[]) {
+export function getTopSetEffort(trainingSessions: TrainingSessionRecord[]) {
   const allSets = trainingSessions.flatMap((session) => session.sets);
   const rpeValues = allSets
     .filter((set) => !set.isWarmup && set.rpe !== undefined)

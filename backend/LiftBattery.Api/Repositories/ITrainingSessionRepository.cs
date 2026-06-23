@@ -4,7 +4,20 @@ namespace LiftBattery.Api.Repositories;
 
 public interface ITrainingLogRepository
 {
-    Task<IReadOnlyList<TrainingSession>> GetByDateRangeAsync(DateOnly from, DateOnly to);
-    Task<TrainingSession> SaveAsync(TrainingSession log);
-    Task<TrainingSession?> DeleteByIdAsync(string id);
+    Task<IReadOnlyList<TrainingDay>> GetByDateRangeAsync(
+        string userId,
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default);
+
+    Task<TrainingDay> AddSessionAsync(
+        string userId,
+        DateOnly date,
+        TrainingSession session,
+        CancellationToken cancellationToken = default);
+
+    Task<TrainingSession?> DeleteSessionAsync(
+        string userId,
+        string sessionId,
+        CancellationToken cancellationToken = default);
 }

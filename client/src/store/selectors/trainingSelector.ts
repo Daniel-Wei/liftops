@@ -1,24 +1,21 @@
 import type { RootState } from "../liftBatteryStore";
 import { createSelector } from "@reduxjs/toolkit";
+import { flattenTrainingDays } from "../../api/trainingSessionDtoMapping";
 
 const training = (state: RootState) => state.training;
 
-export const getTrainingData = createSelector(
-  [training],
-  (training) =>  {
-    return {
-      trainingSessionDraft: training.trainingSessionDraft,
-      status: training.status,
-      error: training.error,
-      pendingOperation: training.pendingOperation,
-      pendingMessage: training.pendingMessage,
-      successMessage: training.successMessage,
-      operationErrorMessage: training.operationErrorMessage,
-    }
-  }
-)
+export const getTrainingData = createSelector([training], (state) => ({
+  trainingSessionDraft: state.trainingSessionDraft,
+  status: state.status,
+  error: state.error,
+  pendingMessage: state.pendingMessage,
+  successMessage: state.successMessage,
+  operationErrorMessage: state.operationErrorMessage,
+}));
 
+export const selectTrainingDays = (state: RootState) => state.training.trainingDays;
 
-export const selectTrainingSessions = (state: RootState) => {
-  return state.training.trainingSessions;
-};
+export const selectTrainingSessions = createSelector(
+  [selectTrainingDays],
+  flattenTrainingDays,
+);

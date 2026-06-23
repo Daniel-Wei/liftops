@@ -1,56 +1,100 @@
-import type { TrainingSessionDto } from "./dtos";
-import type { TrainingSession, TrainingSessionDetails } from "../types/appTypes";
-import { createId, getTodayDate } from "../helpers/GenericHelpers";
+import type {
+  SaveTrainingSessionDto,
+  TrainingDayDto,
+  TrainingExerciseDto,
+  TrainingSessionDto,
+  TrainingSetDto,
+} from "./dtos";
+import type {
+  TrainingDay,
+  TrainingExercise,
+  TrainingSession,
+  TrainingSessionDraft,
+  TrainingSessionRecord,
+  TrainingSet,
+} from "../types/appTypes";
+import { createId } from "../helpers/GenericHelpers";
 
-function getDtoString(dto: TrainingSessionDto, camelKey: keyof TrainingSessionDto, pascalKey: string) {
-  const dtoRecord = dto as unknown as Record<string, unknown>;
-  const value = dtoRecord[camelKey] ?? dtoRecord[pascalKey];
-  return typeof value === "string" ? value : undefined;
-}
+const nowFallback = "1970-01-01T00:00:00.000Z";
 
-function getDtoNumber(dto: TrainingSessionDto, camelKey: keyof TrainingSessionDto, pascalKey: string) {
-  const dtoRecord = dto as unknown as Record<string, unknown>;
-  const value = dtoRecord[camelKey] ?? dtoRecord[pascalKey];
-  return typeof value === "number" ? value : undefined;
-}
-
-export function toTrainingSessionDto(input: TrainingSessionDetails): TrainingSessionDto {
+export function toSaveTrainingSessionDto(input: TrainingSessionDraft): SaveTrainingSessionDto {
   return {
     date: input.date,
-    durationMinutes: 0,
+    startTime: input.startTime,
+    durationMinutes: input.durationMinutes,
     sessionRpe: input.sessionRpe,
-    sets: Array.from({ length: input.sets }, () => ({
-      id: createId("set"),
-      exerciseName: input.exerciseName,
-      muscleGroup: input.primaryMuscleGroup,
-      reps: input.reps,
-      weightKg: input.weightKg,
-      rir: input.rir,
-      rpe: input.rpe,
-      isWarmup: input.isWarmup,
+    exercises: input.exercises.map((exercise) => ({
+      muscleGroup: exercise.muscleGroup,
+      exerciseName: exercise.exerciseName,
+      sets: exercise.sets.map((set, index) => ({
+        setNumber: index + 1,
+        reps: set.reps,
+        weightKg: set.weightKg,
+        rpe: set.rpe,
+        rir: set.rir,
+        isWarmup: set.isWarmup,
+      })),
     })),
   };
 }
 
-export function fromTrainingDto(dto: TrainingSessionDto): TrainingSession {
-  const dtoDate = getDtoString(dto, "date", "Date") ?? getTodayDate();
-
+function fromSetDto(dto: TrainingSetDto): TrainingSet {
   return {
-    id: getDtoString(dto, "id", "Id") ?? `trainingSession-${dtoDate}`,
-    date: dtoDate,
-    durationMinutes: getDtoNumber(dto, "durationMinutes", "DurationMinutes") ?? 0,
-    sessionRpe: getDtoNumber(dto, "sessionRpe", "SessionRpe") ?? 0,
-    sets: dto.sets.map((set) => ({
-      id: set.id ?? createId("set"),
-      exerciseName: set.exerciseName,
-      muscleGroup: set.muscleGroup,
-      reps: set.reps,
-      weightKg: set.weightKg,
-      rpe: set.rpe,
-      rir: set.rir,
-      isWarmup: set.isWarmup,
-    })),
-    createdAt: getDtoString(dto, "createdAt", "CreatedAt") ?? `${dtoDate}T00:00:00.000Z`,
-    updatedAt: getDtoString(dto, "updatedAt", "UpdatedAt") ?? `${dtoDate}T00:00:00.000Z`,
+    id: dto.id ?? createId("set"),
+    setNumber: dto.setNumber,
+    reps: dto.reps,
+    weightKg: dto.weightKg,
+    rpe: dto.rpe,
+    rir: dto.rir,
+    isWarmup: dto.isWarmup,
+    createdAt: dto.createdAt ?? nowFallback,
+    updatedAt: dto.updatedAt ?? nowFallback,
   };
+}
+
+function fromExerciseDto(dto: TrainingExerciseDto): TrainingExercise {
+  return {
+    id: dto.id ?? createId("exercise"),
+    muscleGroup: dto.muscleGroup,
+    exerciseName: dto.exerciseName,
+    sets: dto.sets.map(fromSetDto),
+    createdAt: dto.createdAt ?? nowFallback,
+    updatedAt: dto.updatedAt ?? nowFallback,
+  };
+}
+
+function fromSessionDto(dto: TrainingSessionDto): TrainingSession {
+  return {
+    id: dto.id ?? createId("session"),
+    startTime: dto.startTime,
+    durationMinutes: dto.durationMinutes,
+    sessionRpe: dto.sessionRpe,
+    exercises: dto.exercises.map(fromExerciseDto),
+    createdAt: dto.createdAt ?? nowFallback,
+    updatedAt: dto.updatedAt ?? nowFallback,
+  };
+}
+
+export function fromTrainingDayDto(dto: TrainingDayDto): TrainingDay {
+  return {
+    id: dto.id,
+    userId: dto.userId,
+    date: dto.date,
+    sessions: dto.sessions.map(fromSessionDto),
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
+  };
+}
+
+export function flattenTrainingDays(days: TrainingDay[]): TrainingSessionRecord[] {
+  return days.flatMap((day) => day.sessions.map((session) => ({
+    ...session,
+    userId: day.userId,
+    date: day.date,
+    sets: session.exercises.flatMap((exercise) => exercise.sets.map((set) => ({
+      ...set,
+      exerciseName: exercise.exerciseName,
+      muscleGroup: exercise.muscleGroup,
+    }))),
+  })));
 }

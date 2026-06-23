@@ -1,6 +1,6 @@
 namespace LiftBattery.Api.Data.Entities;
 
-public sealed class PreCheckEntity
+public sealed class TrainingSessionEntity
 {
     public required string Id { get; set; }
 

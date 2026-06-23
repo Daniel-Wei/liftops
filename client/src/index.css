@@ -98,6 +98,134 @@
   --weight-bold: 650;
 }
 
+/* Nested TrainingDay > Session > Exercise > Set editor */
+.training-form-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.training-form-grid--day {
+  grid-template-columns: minmax(12rem, 20rem);
+}
+
+.training-form-grid--session {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.training-form-grid--exercise {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-field {
+  display: grid;
+  gap: 0.45rem;
+  color: var(--color-ink-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.form-field input,
+.form-field select,
+.training-set-table input,
+.training-set-table select {
+  width: 100%;
+  min-height: 2.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.7rem;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  padding: 0.65rem 0.75rem;
+}
+
+.training-exercise-stack,
+.training-day-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.training-exercise-editor,
+.training-day-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1.1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--color-surface) 94%, var(--color-accent) 6%);
+}
+
+.training-editor-heading,
+.training-save-row,
+.saved-training-session {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.training-editor-heading h3 {
+  margin: 0.2rem 0 0;
+}
+
+.training-set-table-wrap {
+  overflow-x: auto;
+}
+
+.training-set-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: separate;
+  border-spacing: 0 0.45rem;
+}
+
+.training-set-table th {
+  padding: 0 0.45rem;
+  color: var(--color-ink-muted);
+  font-size: 0.75rem;
+  text-align: left;
+}
+
+.training-set-table td {
+  padding: 0 0.3rem;
+}
+
+.training-set-number {
+  width: 3rem;
+  font-weight: 800;
+}
+
+.saved-training-session {
+  align-items: flex-start;
+  padding: 0.9rem;
+  border-radius: 0.8rem;
+  background: var(--color-surface);
+}
+
+.saved-training-session > div,
+.saved-training-exercises {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.saved-training-exercises {
+  flex: 1;
+  color: var(--color-ink-muted);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 760px) {
+  .training-form-grid--session,
+  .training-form-grid--exercise {
+    grid-template-columns: 1fr;
+  }
+
+  .training-editor-heading,
+  .training-save-row,
+  .saved-training-session {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
 * {
   box-sizing: border-box;
 }

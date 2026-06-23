@@ -1,4 +1,4 @@
-import type { MuscleGroup, TrainingSession, TrendPoint } from "../types/appTypes";
+import type { MuscleGroup, TrainingSessionRecord, TrendPoint } from "../types/appTypes";
 
 export type TrainingTrendWeek = {
   label: string;
@@ -56,7 +56,7 @@ export function getTrainingTrendWeeks(
 }
 
 export function isSessionInTrainingTrendWeek(
-  session: TrainingSession,
+  session: TrainingSessionRecord,
   week: TrainingTrendWeek,
 ) {
   return session.date >= week.startDate && session.date <= week.endDate;
@@ -79,12 +79,12 @@ export function formatTrainingTrendWeekShortLabel(week: TrainingTrendWeek) {
   return week.label;
 }
 
-function getSessionLoad(session: TrainingSession) {
+function getSessionLoad(session: TrainingSessionRecord) {
   return session.durationMinutes * session.sessionRpe;
 }
 
-function getLatestSessionRecordPerTrainingDay(trainingSessions: TrainingSession[]) {
-  const sessionByDate = new Map<string, TrainingSession>();
+function getLatestSessionRecordPerTrainingDay(trainingSessions: TrainingSessionRecord[]) {
+  const sessionByDate = new Map<string, TrainingSessionRecord>();
 
   trainingSessions.forEach((session) => {
     const existingSession = sessionByDate.get(session.date);
@@ -97,7 +97,7 @@ function getLatestSessionRecordPerTrainingDay(trainingSessions: TrainingSession[
   return [...sessionByDate.values()];
 }
 
-function getSessionVolumeLoad(session: TrainingSession) {
+function getSessionVolumeLoad(session: TrainingSessionRecord) {
   return session.sets
     .reduce((totalVolume, set) => totalVolume + (set.reps * set.weightKg), 0);
 }
@@ -105,7 +105,7 @@ function getSessionVolumeLoad(session: TrainingSession) {
 // Epley e1RM is a simple estimated one-rep max:
 // estimated 1RM = weight x (1 + reps / 30).
 // This is a trend proxy from saved sets, not a promise of an actual max.
-function getSessionEstimatedPr(session: TrainingSession) {
+function getSessionEstimatedPr(session: TrainingSessionRecord) {
   const workingSetEstimates = session.sets
     .filter((set) => !set.isWarmup && set.weightKg > 0 && set.reps > 0)
     .map((set) => set.weightKg * (1 + (set.reps / 30)));
@@ -122,7 +122,7 @@ function getSetEstimatedPr(weightKg: number, reps: number) {
 }
 
 function getWeekForSession(
-  session: TrainingSession,
+  session: TrainingSessionRecord,
   weeks: TrainingTrendWeek[] = presetTrainingTrendWeeks,
 ) {
   return weeks.find((week) => (
@@ -131,8 +131,8 @@ function getWeekForSession(
 }
 
 function getWeekGroupedTrainingTrend(
-  trainingSessions: TrainingSession[],
-  getSessionValue: (session: TrainingSession) => number,
+  trainingSessions: TrainingSessionRecord[],
+  getSessionValue: (session: TrainingSessionRecord) => number,
   weeks: TrainingTrendWeek[] = presetTrainingTrendWeeks,
 ): TrendPoint[] {
   const valueByWeekLabel = new Map<string, number>();
@@ -159,8 +159,8 @@ function getWeekGroupedTrainingTrend(
 }
 
 function getWeekGroupedMaxTrainingTrend(
-  trainingSessions: TrainingSession[],
-  getSessionValue: (session: TrainingSession) => number,
+  trainingSessions: TrainingSessionRecord[],
+  getSessionValue: (session: TrainingSessionRecord) => number,
   weeks: TrainingTrendWeek[] = presetTrainingTrendWeeks,
 ): TrendPoint[] {
   const valueByWeekLabel = new Map<string, number>();
@@ -217,7 +217,7 @@ const mainLiftEstimatedPrConfigs = [
 }>;
 
 function getWeeklyMainLiftEstimatedPrTrend(
-  trainingSessions: TrainingSession[],
+  trainingSessions: TrainingSessionRecord[],
   muscleGroups: MuscleGroup[],
 ) {
   const targetMuscleGroups = new Set(muscleGroups);
@@ -256,7 +256,7 @@ function getWeeklyMainLiftEstimatedPrTrend(
 }
 
 export function getWeeklyExerciseEstimatedPrTrend(
-  trainingSessions: TrainingSession[],
+  trainingSessions: TrainingSessionRecord[],
   exerciseName: string,
   weeks: TrainingTrendWeek[] = presetTrainingTrendWeeks,
   muscleGroup?: MuscleGroup,
@@ -300,7 +300,7 @@ export function getWeeklyExerciseEstimatedPrTrend(
 }
 
 export function getWeeklySessionLoadTrend(
-  trainingSessions: TrainingSession[],
+  trainingSessions: TrainingSessionRecord[],
   weeks: TrainingTrendWeek[] = presetTrainingTrendWeeks,
 ): TrendPoint[] {
   return getWeekGroupedTrainingTrend(
@@ -311,18 +311,18 @@ export function getWeeklySessionLoadTrend(
 }
 
 export function getWeeklyVolumeLoadTrend(
-  trainingSessions: TrainingSession[],
+  trainingSessions: TrainingSessionRecord[],
   weeks: TrainingTrendWeek[] = presetTrainingTrendWeeks,
 ): TrendPoint[] {
   return getWeekGroupedTrainingTrend(trainingSessions, getSessionVolumeLoad, weeks);
 }
 
-export function getWeeklyEstimatedPrTrend(trainingSessions: TrainingSession[]): TrendPoint[] {
+export function getWeeklyEstimatedPrTrend(trainingSessions: TrainingSessionRecord[]): TrendPoint[] {
   return getWeekGroupedMaxTrainingTrend(trainingSessions, getSessionEstimatedPr);
 }
 
 export function getWeeklyMainLiftEstimatedPrTrends(
-  trainingSessions: TrainingSession[],
+  trainingSessions: TrainingSessionRecord[],
 ): MainLiftEstimatedPrTrend[] {
   return mainLiftEstimatedPrConfigs.map((config) => ({
     id: config.id,

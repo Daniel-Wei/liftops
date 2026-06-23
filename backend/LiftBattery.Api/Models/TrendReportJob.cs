@@ -18,7 +18,7 @@ public sealed record TrendReportRequest(
     IReadOnlyList<string> ReportTypes);
 
 public sealed record TrendReportSnapshot(
-    IReadOnlyList<TrainingSession> TrainingSessions,
+    IReadOnlyList<TrainingDay> TrainingDays,
     IReadOnlyList<PreCheckLog> PreCheckLogs);
 
 public sealed record TrendReportJob(

@@ -16,25 +16,48 @@ export type PreCheckDto = {
   previousSessionDurationMinutes?: number;
 };
 
-export type TrainingSetEntryDto = {
+export type TrainingSetDto = {
   id?: string;
-  exerciseName: string;
-  muscleGroup: MuscleGroup;
+  setNumber: number;
   reps: number;
   weightKg: number;
   rpe?: number;
   rir?: number;
   isWarmup: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type TrainingExerciseDto = {
+  id?: string;
+  muscleGroup: MuscleGroup;
+  exerciseName: string;
+  sets: TrainingSetDto[];
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type TrainingSessionDto = {
   id?: string;
-  date: string;
+  startTime: string;
   durationMinutes: number;
   sessionRpe: number;
-  sets: TrainingSetEntryDto[];
+  exercises: TrainingExerciseDto[];
   createdAt?: string;
   updatedAt?: string;
+};
+
+export type TrainingDayDto = {
+  id: string;
+  userId: string;
+  date: string;
+  sessions: TrainingSessionDto[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SaveTrainingSessionDto = Omit<TrainingSessionDto, "id" | "createdAt" | "updatedAt"> & {
+  date: string;
 };
 
 export type TrendReportSelectionDto = {

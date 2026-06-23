@@ -80,39 +80,80 @@ export type MuscleGroup =
   | "Abs"
   | "All";
 
-export type TrainingSessionDetails = {
-  date: string;
-  sessionRpe: number;
-  exerciseName: string;
-  primaryMuscleGroup: MuscleGroup;
-  sets: number;
+export type TrainingSet = {
+  id: string;
+  setNumber: number;
   reps: number;
   weightKg: number;
   rpe?: number;
   rir?: number;
   isWarmup: boolean;
-};
-
-export type SetEntry = {
-  id: string;
-  exerciseName: string;
-  muscleGroup: MuscleGroup;
-  reps: number;
-  weightKg: number;
-  rpe?: number;
-  rir?: number;
-  isWarmup: boolean;
-};
-
-// TrainingSession stores one saved training day/session, separate from readiness check-ins.
-export type TrainingSession = {
-  id: string;
-  date: string;
-  durationMinutes: number;
-  sessionRpe: number;
-  sets: SetEntry[];
   createdAt: string;
   updatedAt: string;
+};
+
+export type TrainingExercise = {
+  id: string;
+  muscleGroup: MuscleGroup;
+  exerciseName: string;
+  sets: TrainingSet[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TrainingSession = {
+  id: string;
+  startTime: string;
+  durationMinutes: number;
+  sessionRpe: number;
+  exercises: TrainingExercise[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TrainingDay = {
+  id: string;
+  userId: string;
+  date: string;
+  sessions: TrainingSession[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TrainingSetDraft = {
+  id: string;
+  reps: number;
+  weightKg: number;
+  rpe?: number;
+  rir?: number;
+  isWarmup: boolean;
+};
+
+export type TrainingExerciseDraft = {
+  id: string;
+  muscleGroup: Exclude<MuscleGroup, "All">;
+  exerciseName: string;
+  sets: TrainingSetDraft[];
+};
+
+export type TrainingSessionDraft = {
+  date: string;
+  startTime: string;
+  durationMinutes: number;
+  sessionRpe: number;
+  exercises: TrainingExerciseDraft[];
+};
+
+// Read-only flattened view used by the existing analytics modules.
+export type SetEntry = TrainingSet & {
+  exerciseName: string;
+  muscleGroup: MuscleGroup;
+};
+
+export type TrainingSessionRecord = TrainingSession & {
+  userId: string;
+  date: string;
+  sets: SetEntry[];
 };
 
 // BodyweightEntry stores scale-weight data for weight trend calculations.
@@ -343,16 +384,6 @@ export type ReadinessControl = {
 };
 
 // #region TrainingPage types
-
-export type TrainingSessionTextField =
-  | "date"
-  | "sessionRpe"
-  | "exerciseName"
-  | "setsCount"
-  | "reps"
-  | "weightKg"
-  | "setRpe"
-  | "rir";
 
 export type TrainableMuscleGroup = Exclude<MuscleGroup, "All">;
 
