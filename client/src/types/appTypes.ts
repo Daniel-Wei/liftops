@@ -1,5 +1,4 @@
 export enum PageKey {
-  Landing = "landing",
   Login = "login",
   Register = "register",
   Overview = "overview",
@@ -315,53 +314,6 @@ export type RecordOutputItem = {
   basisZh: string;
 };
 
-export type SettingsMock = {
-  modePreset: string;
-  cycleLength: string;
-  trainingGoal: string;
-  targetMuscles: string[];
-  units: string;
-};
-
-export type WeeklyReviewMock = {
-  summary: string;
-  summaryZh: string;
-  weeklyLoad: string;
-  monotony: string;
-  strain: string;
-  bodyweightRate: string;
-  riskChanges: string[];
-  nextWeek: string;
-  nextWeekZh: string;
-};
-
-export type LevelMockData = {
-  level: UserLevel;
-  userCase: UserCase;
-  trainingBlock: TrainingBlock;
-  overviewMetrics: Metric[];
-  loadMetrics: Metric[];
-  effortMetrics: Metric[];
-  volumeMetrics: Metric[];
-  recoveryMetrics: Metric[];
-  nutritionMetrics: Metric[];
-  primaryStimulusItems: WorkItem[];
-  supportWorkItems: WorkItem[];
-  riskWatches: RiskWatch[];
-  timelinePhases: TimelinePhase[];
-  loadTrend: TrendPoint[];
-  recoveryTrend: TrendPoint[];
-  volumeTrend: TrendPoint[];
-  bodyweightTrend: TrendPoint[];
-  nutritionTrend: TrendPoint[];
-  quickLogItems: CheckInItem[];
-  optionalLogItems: CheckInItem[];
-  advancedLogItems: CheckInItem[];
-  recordOutputItems: RecordOutputItem[];
-  weeklyReview: WeeklyReviewMock;
-  settingsMock: SettingsMock;
-};
-
 export type FormulaReference = {
   label: string;
   url: string;
@@ -403,18 +355,50 @@ export type TrendReportType =
   | "muscleStimulation";
 
 export type MuscleMapKey =
-  | "chest"
-  | "back"
+  | "pecClavicular"
+  | "pecSternocostal"
+  | "pecAbdominal"
+  | "pectoralisMinor"
+  | "latissimusDorsi"
+  | "teresMajor"
+  | "teresMinor"
+  | "infraspinatus"
+  | "rhomboidMajor"
+  | "rhomboidMinor"
+  | "upperTrapezius"
+  | "midTrapezius"
+  | "lowerTrapezius"
+  | "erectorSpinae"
+  | "serratusAnterior"
   | "frontDeltoid"
   | "sideDeltoid"
   | "rearDeltoid"
-  | "biceps"
-  | "triceps"
-  | "abs"
-  | "glutes"
-  | "quads"
-  | "hamstrings"
-  | "calves";
+  | "bicepsLongHead"
+  | "bicepsShortHead"
+  | "brachialis"
+  | "brachioradialis"
+  | "tricepsLongHead"
+  | "tricepsLateralHead"
+  | "tricepsMedialHead"
+  | "rectusAbdominis"
+  | "externalOblique"
+  | "internalOblique"
+  | "transversusAbdominis"
+  | "gluteMaximus"
+  | "gluteMedius"
+  | "gluteMinimus"
+  | "adductorMagnus"
+  | "rectusFemoris"
+  | "vastusLateralis"
+  | "vastusMedialis"
+  | "vastusIntermedius"
+  | "bicepsFemorisLongHead"
+  | "bicepsFemorisShortHead"
+  | "semitendinosus"
+  | "semimembranosus"
+  | "gastrocnemiusMedial"
+  | "gastrocnemiusLateral"
+  | "soleus";
 
 export type MuscleActivationRole = "primary" | "secondary" | "supporting";
 

@@ -292,28 +292,38 @@ export function TrainingPage() {
           <div className="training-day-list training-day-list--calendar">
             {filteredDays.map((day) => (
               <article className="training-day-card" key={day.id}>
-                <div className="training-day-calendar-heading">
-                  <div className="training-calendar-date"><strong>{formatDate(day.date)}</strong><span>{day.sessions.length} 次训练</span></div>
-                </div>
-                {day.sessions.map((session) => (
-                  <div className="saved-training-session saved-training-session--stacked" key={session.id}>
-                    <div className="saved-session-summary-row">
-                      <div><strong>{session.startTime}</strong><span>{session.durationMinutes} 分钟</span></div>
-                      <div><span>总体难度 {session.sessionRpe}</span></div>
-                      <button type="button" className="text-button" onClick={() => void dispatch(deleteTrainingSession(session.id))}>删除</button>
-                    </div>
-                    <div className="saved-training-exercise-list">
-                      {session.exercises.map((exercise) => (
-                        <div className="saved-training-exercise" key={exercise.id}>
-                          <div><strong>{getExerciseDisplayLabel(exercise.exerciseName)}</strong><span>{getMuscleGroupDisplayLabel(exercise.muscleGroup)}</span></div>
-                          <div className="saved-set-chips">
-                            {exercise.sets.map((set) => <span className="signal-chip signal-chip--muted" key={set.id}>{set.setOrder} · {set.weightKg}kg × {set.reps}{set.isWarmup ? " · 热身" : ""}</span>)}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                <div className="training-day-record-layout">
+                  <div className="training-day-calendar-heading">
+                    <div className="training-calendar-date"><strong>{formatDate(day.date)}</strong><span>{day.sessions.length} 次训练</span></div>
                   </div>
-                ))}
+                  <div className="training-day-session-list">
+                    {day.sessions.map((session) => (
+                      <div className="saved-training-session saved-training-session--stacked" key={session.id}>
+                        <div className="saved-session-summary-row">
+                          <div className="saved-session-meta">
+                            <strong>{session.startTime}</strong>
+                            <span>{session.durationMinutes} 分钟</span>
+                            <span>总体难度 {session.sessionRpe}</span>
+                          </div>
+                          <button type="button" className="text-button saved-session-delete-button" onClick={() => void dispatch(deleteTrainingSession(session.id))}>删除</button>
+                        </div>
+                        <div className="saved-training-exercise-list">
+                          {session.exercises.map((exercise) => (
+                            <div className="saved-training-exercise" key={exercise.id}>
+                              <div className="saved-training-exercise-heading">
+                                <strong>{getExerciseDisplayLabel(exercise.exerciseName)}</strong>
+                                <span>{getMuscleGroupDisplayLabel(exercise.muscleGroup)}</span>
+                              </div>
+                              <div className="saved-set-chips">
+                                {exercise.sets.map((set) => <span className="signal-chip signal-chip--muted" key={set.id}>{set.setOrder} · {set.weightKg}kg × {set.reps}{set.rir !== undefined ? ` · RIR ${set.rir}` : ""}{set.rpe !== undefined ? ` · RPE ${set.rpe}` : ""}{set.isWarmup ? " · 热身" : ""}</span>)}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </article>
             ))}
           </div>

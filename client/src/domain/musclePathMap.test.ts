@@ -15,9 +15,9 @@ describe("musclePathMap", () => {
   });
 
   it("returns empty path lists until real SVG muscle paths exist", () => {
-    expect(getPathIdsForMuscle("glutes", "back")).toEqual([]);
-    expect(getPathIdsForMuscle("hamstrings", "back")).toEqual([]);
-    expect(getPathIdsForMuscle("calves", "back")).toEqual([]);
+    expect(getPathIdsForMuscle("gluteMaximus", "back")).toEqual([]);
+    expect(getPathIdsForMuscle("bicepsFemorisLongHead", "back")).toEqual([]);
+    expect(getPathIdsForMuscle("gastrocnemiusMedial", "back")).toEqual([]);
   });
 
   it("keeps the reverse index empty when there are no real path ids", () => {
@@ -25,4 +25,3 @@ describe("musclePathMap", () => {
     expect(getMuscleIdForPathId("glute-left")).toBeUndefined();
   });
 });
-

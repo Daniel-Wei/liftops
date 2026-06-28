@@ -1,15 +1,13 @@
 import { useState, type FormEvent } from "react";
 import { registerUser } from "../store/slices/authSlice";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { PageKey } from "../types/appTypes";
 
 type RegisterPageProps = {
   onAuthenticated: () => void;
   onLogin: () => void;
-  onNavigate: (page: PageKey) => void;
 };
 
-export function RegisterPage({ onAuthenticated, onLogin, onNavigate }: RegisterPageProps) {
+export function RegisterPage({ onAuthenticated, onLogin }: RegisterPageProps) {
   const dispatch = useAppDispatch();
   const { status, error } = useAppSelector((state) => state.auth);
   const [displayName, setDisplayName] = useState("");
@@ -69,7 +67,6 @@ export function RegisterPage({ onAuthenticated, onLogin, onNavigate }: RegisterP
 
         <div className="auth-switch">
           <button type="button" className="text-button" onClick={onLogin}>已有账号？登录</button>
-          <button type="button" className="text-button" onClick={() => onNavigate(PageKey.Landing)}>回到首页</button>
         </div>
       </section>
     </main>

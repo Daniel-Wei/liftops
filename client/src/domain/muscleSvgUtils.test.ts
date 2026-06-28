@@ -20,12 +20,11 @@ describe("muscleSvgUtils", () => {
 
   it("turns activation arrays into a role lookup map", () => {
     expect(getActivationRoleMap([
-      { muscle: "chest", role: "primary" },
-      { muscle: "triceps", role: "secondary" },
+      { muscle: "pecSternocostal", role: "primary" },
+      { muscle: "tricepsLateralHead", role: "secondary" },
     ])).toEqual({
-      chest: "primary",
-      triceps: "secondary",
+      pecSternocostal: "primary",
+      tricepsLateralHead: "secondary",
     });
   });
 });
-

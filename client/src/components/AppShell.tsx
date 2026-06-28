@@ -19,7 +19,7 @@ export function AppShell({
   children,
 }: AppShellProps) {
   // Public entry screens are standalone, so they skip the dashboard sidebar and topbar.
-  if ([PageKey.Landing, PageKey.Login, PageKey.Register].includes(currentPage)) {
+  if ([PageKey.Login, PageKey.Register].includes(currentPage)) {
     return <>{children}</>;
   }
 
@@ -30,7 +30,7 @@ export function AppShell({
       <aside className="app-sidebar">
         <button
           type="button"
-          onClick={() => onNavigate(PageKey.Landing)}
+          onClick={() => onNavigate(PageKey.Overview)}
           className="brand-card"
         >
           <p className="brand-title">训练电量</p>
@@ -68,7 +68,7 @@ export function AppShell({
           </div>
           <button
             type="button"
-            onClick={() => onNavigate(PageKey.Landing)}
+            onClick={() => onNavigate(PageKey.Overview)}
             className="button-dark"
           >
             首页

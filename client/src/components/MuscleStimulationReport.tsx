@@ -14,16 +14,27 @@ type MuscleStimulationReportProps = {
 };
 
 const muscleGroupToFigureMuscles: Record<Exclude<MuscleGroup, "All">, MuscleMapKey[]> = {
-  Chest: ["chest"],
-  Back: ["back"],
+  Chest: ["pecClavicular", "pecSternocostal", "pecAbdominal", "pectoralisMinor"],
+  Back: [
+    "latissimusDorsi",
+    "teresMajor",
+    "teresMinor",
+    "infraspinatus",
+    "rhomboidMajor",
+    "rhomboidMinor",
+    "upperTrapezius",
+    "midTrapezius",
+    "lowerTrapezius",
+    "erectorSpinae",
+  ],
   Shoulders: ["frontDeltoid", "sideDeltoid", "rearDeltoid"],
-  Biceps: ["biceps"],
-  Triceps: ["triceps"],
-  Quads: ["quads"],
-  Hamstrings: ["hamstrings"],
-  Glutes: ["glutes"],
-  Calves: ["calves"],
-  Abs: ["abs"],
+  Biceps: ["bicepsLongHead", "bicepsShortHead", "brachialis", "brachioradialis"],
+  Triceps: ["tricepsLongHead", "tricepsLateralHead", "tricepsMedialHead"],
+  Quads: ["rectusFemoris", "vastusLateralis", "vastusMedialis", "vastusIntermedius"],
+  Hamstrings: ["bicepsFemorisLongHead", "bicepsFemorisShortHead", "semitendinosus", "semimembranosus"],
+  Glutes: ["gluteMaximus", "gluteMedius", "gluteMinimus"],
+  Calves: ["gastrocnemiusMedial", "gastrocnemiusLateral", "soleus"],
+  Abs: ["rectusAbdominis", "externalOblique", "internalOblique", "transversusAbdominis"],
 };
 
 function toVisualRole(level: "high" | "medium" | "low" | "none"): MuscleVisualRole {

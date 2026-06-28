@@ -1,5 +1,6 @@
 import type { MuscleMapKey } from "../types/appTypes";
 import { MuscleModelViewer } from "./MuscleModelViewer";
+import { allMuscleMapKeys } from "../domain/exerciseMuscleMap";
 import type { MuscleView, MuscleVisualRole } from "../domain/muscleAssetTypes";
 
 type MuscleFigureProps = {
@@ -7,21 +8,6 @@ type MuscleFigureProps = {
   getHighlight: (muscle: MuscleMapKey) => string | undefined;
   active?: boolean;
 };
-
-const allMuscles: MuscleMapKey[] = [
-  "chest",
-  "back",
-  "frontDeltoid",
-  "sideDeltoid",
-  "rearDeltoid",
-  "biceps",
-  "triceps",
-  "abs",
-  "glutes",
-  "quads",
-  "hamstrings",
-  "calves",
-];
 
 function toVisualRole(value: string | undefined): MuscleVisualRole {
   if (value === "primary" || value === "secondary" || value === "supporting") {
@@ -40,7 +26,7 @@ export function MuscleFigure({ view, getHighlight, active = true }: MuscleFigure
     <MuscleModelViewer
       view={view}
       className={active ? undefined : "muscle-model-viewer--muted"}
-      activations={allMuscles.map((muscle) => ({
+      activations={allMuscleMapKeys.map((muscle) => ({
         muscle,
         role: toVisualRole(getHighlight(muscle)),
       }))}

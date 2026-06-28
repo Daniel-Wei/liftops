@@ -5,27 +5,57 @@ type MuscleModelDefinition = {
 };
 
 const muscleModelMap: Record<MuscleMapKey, MuscleModelDefinition> = {
-  chest: {
+  pecClavicular: {
+    labels: ["clavicular head of pectoralis major"],
+  },
+  pecSternocostal: {
+    labels: ["sternocostal head of pectoralis major"],
+  },
+  pecAbdominal: {
+    labels: ["abdominal part of pectoralis major"],
+  },
+  pectoralisMinor: {
+    labels: ["pectoralis minor"],
+  },
+  latissimusDorsi: {
+    labels: ["latissimus dorsi"],
+  },
+  teresMajor: {
+    labels: ["teres major"],
+  },
+  teresMinor: {
+    labels: ["teres minor"],
+  },
+  infraspinatus: {
+    labels: ["infraspinatus"],
+  },
+  rhomboidMajor: {
+    labels: ["rhomboid major"],
+  },
+  rhomboidMinor: {
+    labels: ["rhomboid minor"],
+  },
+  upperTrapezius: {
+    labels: ["descending part of trapezius"],
+  },
+  midTrapezius: {
+    labels: ["transverse part of trapezius"],
+  },
+  lowerTrapezius: {
+    labels: ["ascending part of trapezius"],
+  },
+  erectorSpinae: {
     labels: [
-      "pectoralis major",
-      "clavicular head of pectoralis major",
-      "sternocostal head of pectoralis major",
-      "abdominal part of pectoralis major",
+      "iliocostalis lumborum",
+      "iliocostalis thoracis",
+      "longissimus thoracis",
+      "spinalis thoracis",
+      "multifidus lumborum",
+      "multifidus thoracis",
     ],
   },
-  back: {
-    labels: [
-      "latissimus dorsi",
-      "trapezius",
-      "rhomboid major",
-      "rhomboid minor",
-      "teres major",
-      "teres minor",
-      "infraspinatus",
-      "iliocostalis",
-      "longissimus",
-      "spinalis",
-    ],
+  serratusAnterior: {
+    labels: ["serratus anterior"],
   },
   frontDeltoid: {
     labels: ["clavicular part of deltoid"],
@@ -36,58 +66,83 @@ const muscleModelMap: Record<MuscleMapKey, MuscleModelDefinition> = {
   rearDeltoid: {
     labels: ["scapular spinal part of deltoid"],
   },
-  biceps: {
-    labels: [
-      "long head of biceps brachii",
-      "short head of biceps brachii",
-      "brachialis",
-    ],
+  bicepsLongHead: {
+    labels: ["long head of biceps brachii"],
   },
-  triceps: {
-    labels: [
-      "medial head of triceps brachii",
-      "lateral head of triceps brachii",
-      "long head of triceps brachii",
-    ],
+  bicepsShortHead: {
+    labels: ["short head of biceps brachii"],
   },
-  abs: {
-    labels: [
-      "rectus abdominis",
-      "external abdominal oblique",
-      "internal abdominal oblique",
-      "transversus abdominis",
-    ],
+  brachialis: {
+    labels: ["brachialis"],
   },
-  glutes: {
-    labels: [
-      "gluteus maximus",
-      "gluteus medius",
-      "gluteus minimus",
-    ],
+  brachioradialis: {
+    labels: ["brachioradialis"],
   },
-  quads: {
-    labels: [
-      "rectus femoris",
-      "vastus lateralis",
-      "vastus medialis",
-      "vastus intermedius",
-    ],
+  tricepsLongHead: {
+    labels: ["long head of triceps brachii"],
   },
-  hamstrings: {
-    labels: [
-      "long head of biceps femoris",
-      "short head of biceps femoris",
-      "semimembranosus",
-      "semitendinosus",
-    ],
+  tricepsLateralHead: {
+    labels: ["lateral head of triceps brachii"],
   },
-  calves: {
-    labels: [
-      "gastrocnemius",
-      "lateral head of gastrocnemius",
-      "medial head of gastrocnemius",
-      "soleus",
-    ],
+  tricepsMedialHead: {
+    labels: ["medial head of triceps brachii"],
+  },
+  rectusAbdominis: {
+    labels: ["rectus abdominis"],
+  },
+  externalOblique: {
+    labels: ["external abdominal oblique"],
+  },
+  internalOblique: {
+    labels: ["internal abdominal oblique"],
+  },
+  transversusAbdominis: {
+    labels: ["transversus abdominis"],
+  },
+  gluteMaximus: {
+    labels: ["gluteus maximus"],
+  },
+  gluteMedius: {
+    labels: ["gluteus medius"],
+  },
+  gluteMinimus: {
+    labels: ["gluteus minimus"],
+  },
+  adductorMagnus: {
+    labels: ["adductor magnus"],
+  },
+  rectusFemoris: {
+    labels: ["rectus femoris"],
+  },
+  vastusLateralis: {
+    labels: ["vastus lateralis"],
+  },
+  vastusMedialis: {
+    labels: ["vastus medialis"],
+  },
+  vastusIntermedius: {
+    labels: ["vastus intermedius"],
+  },
+  bicepsFemorisLongHead: {
+    labels: ["long head of biceps femoris"],
+  },
+  bicepsFemorisShortHead: {
+    labels: ["short head of biceps femoris"],
+  },
+  semitendinosus: {
+    labels: ["semitendinosus"],
+  },
+  semimembranosus: {
+    labels: ["semimembranosus"],
+  },
+  gastrocnemiusMedial: {
+    labels: ["medial head of gastrocnemius"],
+  },
+  gastrocnemiusLateral: {
+    labels: ["lateral head of gastrocnemius"],
+  },
+  soleus: {
+    labels: ["soleus"],
   },
 };
 
@@ -118,4 +173,3 @@ export function getMuscleKeyForModelObject(name: string, userData: Record<string
 export function getModelLabelsForMuscle(muscle: MuscleMapKey) {
   return muscleModelMap[muscle].labels;
 }
-

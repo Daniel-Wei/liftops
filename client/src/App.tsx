@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { Provider as ReduxProvider } from "react-redux";
 import { AppShell } from "./components/AppShell";
-import { navItems } from "./data/mockData";
+import { navItems } from "./data/navigation";
 import { PageKey } from "./types/appTypes";
-import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
 import { OverviewPage } from "./pages/OverviewPage";
 import { PreCheckPage } from "./pages/PreCheckPage";
@@ -18,7 +17,7 @@ import { fetchCurrentUser, logoutUser } from "./store/slices/authSlice";
 function AppContent() {
   const dispatch = useAppDispatch();
   const { user, hydrated } = useAppSelector((state) => state.auth);
-  const [currentPage, setCurrentPage] = useState<PageKey>(PageKey.Landing);
+  const [currentPage, setCurrentPage] = useState<PageKey>(PageKey.Login);
   const [returnPage, setReturnPage] = useState<PageKey>(PageKey.Overview);
 
   useEffect(() => {
@@ -29,12 +28,14 @@ function AppContent() {
     void dispatch(fetchCurrentUser());
   }, [dispatch]);
 
+  useEffect(() => {
+    if (hydrated && user && [PageKey.Login, PageKey.Register].includes(currentPage)) {
+      setCurrentPage(returnPage);
+    }
+  }, [currentPage, hydrated, returnPage, user]);
+
   function navigate(page: PageKey) {
-    const protectedPage = ![
-      PageKey.Landing,
-      PageKey.Login,
-      PageKey.Register,
-    ].includes(page);
+    const protectedPage = ![PageKey.Login, PageKey.Register].includes(page);
 
     if (protectedPage && !user) {
       setReturnPage(page);
@@ -55,19 +56,16 @@ function AppContent() {
   }
 
   function renderPage() {
-    if (!hydrated && currentPage !== PageKey.Landing) {
+    if (!hydrated) {
       return <div className="page page-stack"><section className="empty-card">正在恢复登录状态...</section></div>;
     }
 
     switch (currentPage) {
-      case PageKey.Landing:
-        return <LandingPage onStart={() => navigate(PageKey.Overview)} />;
       case PageKey.Login:
         return (
           <LoginPage
             onAuthenticated={handleAuthenticated}
             onRegister={() => setCurrentPage(PageKey.Register)}
-            onNavigate={navigate}
           />
         );
       case PageKey.Register:
@@ -75,7 +73,6 @@ function AppContent() {
           <RegisterPage
             onAuthenticated={handleAuthenticated}
             onLogin={() => setCurrentPage(PageKey.Login)}
-            onNavigate={navigate}
           />
         );
       case PageKey.PreCheck:

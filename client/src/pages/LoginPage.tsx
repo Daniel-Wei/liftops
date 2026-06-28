@@ -1,15 +1,13 @@
 import { useState, type FormEvent } from "react";
 import { loginUser } from "../store/slices/authSlice";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { PageKey } from "../types/appTypes";
 
 type LoginPageProps = {
   onAuthenticated: () => void;
   onRegister: () => void;
-  onNavigate: (page: PageKey) => void;
 };
 
-export function LoginPage({ onAuthenticated, onRegister, onNavigate }: LoginPageProps) {
+export function LoginPage({ onAuthenticated, onRegister }: LoginPageProps) {
   const dispatch = useAppDispatch();
   const { status, error } = useAppSelector((state) => state.auth);
   const [email, setEmail] = useState("");
@@ -48,7 +46,6 @@ export function LoginPage({ onAuthenticated, onRegister, onNavigate }: LoginPage
 
         <div className="auth-switch">
           <button type="button" className="text-button" onClick={onRegister}>没有账号？注册 Beta</button>
-          <button type="button" className="text-button" onClick={() => onNavigate(PageKey.Landing)}>回到首页</button>
         </div>
       </section>
     </main>

@@ -1,4 +1,4 @@
-import type { MuscleActivation, MuscleMapKey } from "../types/appTypes";
+import type { MuscleActivation, MuscleGroup, MuscleMapKey } from "../types/appTypes";
 
 type ExerciseMuscleContribution = {
   exerciseId: string;
@@ -6,125 +6,666 @@ type ExerciseMuscleContribution = {
   tip: string;
 };
 
-const baseMuscleMap: Record<string, ExerciseMuscleContribution> = {
-  "Bench Press": {
-    exerciseId: "Bench Press",
-    muscles: [
-      { muscle: "chest", role: "primary", contribution: 100 },
-      { muscle: "triceps", role: "secondary", contribution: 45 },
-      { muscle: "frontDeltoid", role: "secondary", contribution: 35 },
-    ],
-    tip: "保持肩胛稳定，控制下放速度；这里是训练记录估算，不是医学结论。",
-  },
-  "Incline Bench Press": {
-    exerciseId: "Incline Bench Press",
-    muscles: [
-      { muscle: "chest", role: "primary", contribution: 90 },
-      { muscle: "frontDeltoid", role: "secondary", contribution: 55 },
-      { muscle: "triceps", role: "secondary", contribution: 40 },
-    ],
-    tip: "上斜角度会更偏向上胸和前三角，注意别耸肩代偿。",
-  },
-  "Lat Pulldown": {
-    exerciseId: "Lat Pulldown",
-    muscles: [
-      { muscle: "back", role: "primary", contribution: 95 },
-      { muscle: "biceps", role: "secondary", contribution: 45 },
-      { muscle: "rearDeltoid", role: "supporting", contribution: 20 },
-    ],
-    tip: "先让肩胛下沉，再用背部发力把肘拉向身体两侧。",
-  },
-  "Barbell Row": {
-    exerciseId: "Barbell Row",
-    muscles: [
-      { muscle: "back", role: "primary", contribution: 100 },
-      { muscle: "biceps", role: "secondary", contribution: 40 },
-      { muscle: "rearDeltoid", role: "secondary", contribution: 35 },
-    ],
-    tip: "保持躯干角度稳定，避免每次都用身体弹动完成。",
-  },
-  "Back Squat": {
-    exerciseId: "Back Squat",
-    muscles: [
-      { muscle: "quads", role: "primary", contribution: 90 },
-      { muscle: "glutes", role: "secondary", contribution: 60 },
-      { muscle: "hamstrings", role: "supporting", contribution: 25 },
-    ],
-    tip: "全程维持脚掌稳定，按你的训练目标控制深度和节奏。",
-  },
-  "Romanian Deadlift": {
-    exerciseId: "Romanian Deadlift",
-    muscles: [
-      { muscle: "hamstrings", role: "primary", contribution: 100 },
-      { muscle: "glutes", role: "secondary", contribution: 65 },
-      { muscle: "back", role: "supporting", contribution: 30 },
-    ],
-    tip: "髋关节向后折叠，保持背部张力，重量贴近身体。",
-  },
-};
+type FineActivation = [muscle: MuscleMapKey, contribution: number];
 
-const groupFallbacks: Record<string, ExerciseMuscleContribution> = {
-  Chest: baseMuscleMap["Bench Press"],
-  Back: baseMuscleMap["Lat Pulldown"],
-  Shoulders: {
-    exerciseId: "Shoulders",
-    muscles: [
-      { muscle: "sideDeltoid", role: "primary", contribution: 90 },
-      { muscle: "frontDeltoid", role: "secondary", contribution: 45 },
-      { muscle: "triceps", role: "supporting", contribution: 20 },
-    ],
-    tip: "肩部动作通常需要控制惯性，保持动作路径稳定。",
-  },
-  Biceps: {
-    exerciseId: "Biceps",
-    muscles: [{ muscle: "biceps", role: "primary", contribution: 100 }],
-    tip: "弯举类动作保持上臂稳定，避免借力摆动。",
-  },
-  Triceps: {
-    exerciseId: "Triceps",
-    muscles: [{ muscle: "triceps", role: "primary", contribution: 100 }],
-    tip: "臂屈伸类动作注意肘部位置稳定，不追求疼痛感。",
-  },
-  Quads: baseMuscleMap["Back Squat"],
-  Hamstrings: baseMuscleMap["Romanian Deadlift"],
-  Glutes: {
-    exerciseId: "Glutes",
-    muscles: [
-      { muscle: "glutes", role: "primary", contribution: 100 },
-      { muscle: "hamstrings", role: "secondary", contribution: 35 },
-    ],
-    tip: "臀部动作重点是髋伸展，不需要把下背压力做得很重。",
-  },
-  Calves: {
-    exerciseId: "Calves",
-    muscles: [{ muscle: "calves", role: "primary", contribution: 100 }],
-    tip: "提踵动作可以控制顶峰停顿和离心速度。",
-  },
-  Abs: {
-    exerciseId: "Abs",
-    muscles: [{ muscle: "abs", role: "primary", contribution: 100 }],
-    tip: "核心训练以控制骨盆和躯干位置为主。",
-  },
-};
+export const allMuscleMapKeys = [
+  "pecClavicular",
+  "pecSternocostal",
+  "pecAbdominal",
+  "pectoralisMinor",
+  "latissimusDorsi",
+  "teresMajor",
+  "teresMinor",
+  "infraspinatus",
+  "rhomboidMajor",
+  "rhomboidMinor",
+  "upperTrapezius",
+  "midTrapezius",
+  "lowerTrapezius",
+  "erectorSpinae",
+  "serratusAnterior",
+  "frontDeltoid",
+  "sideDeltoid",
+  "rearDeltoid",
+  "bicepsLongHead",
+  "bicepsShortHead",
+  "brachialis",
+  "brachioradialis",
+  "tricepsLongHead",
+  "tricepsLateralHead",
+  "tricepsMedialHead",
+  "rectusAbdominis",
+  "externalOblique",
+  "internalOblique",
+  "transversusAbdominis",
+  "gluteMaximus",
+  "gluteMedius",
+  "gluteMinimus",
+  "adductorMagnus",
+  "rectusFemoris",
+  "vastusLateralis",
+  "vastusMedialis",
+  "vastusIntermedius",
+  "bicepsFemorisLongHead",
+  "bicepsFemorisShortHead",
+  "semitendinosus",
+  "semimembranosus",
+  "gastrocnemiusMedial",
+  "gastrocnemiusLateral",
+  "soleus",
+] as const satisfies readonly MuscleMapKey[];
 
 export const muscleDisplayLabels: Record<MuscleMapKey, string> = {
-  chest: "胸部",
-  back: "背部",
+  pecClavicular: "上胸：胸大肌锁骨头",
+  pecSternocostal: "中胸：胸大肌胸肋头",
+  pecAbdominal: "下胸：胸大肌腹部",
+  pectoralisMinor: "胸小肌",
+  latissimusDorsi: "背阔肌",
+  teresMajor: "大圆肌",
+  teresMinor: "小圆肌",
+  infraspinatus: "冈下肌",
+  rhomboidMajor: "大菱形肌",
+  rhomboidMinor: "小菱形肌",
+  upperTrapezius: "斜方肌上束",
+  midTrapezius: "斜方肌中束",
+  lowerTrapezius: "斜方肌下束",
+  erectorSpinae: "竖脊肌群",
+  serratusAnterior: "前锯肌",
   frontDeltoid: "前三角肌",
   sideDeltoid: "中三角肌",
   rearDeltoid: "后三角肌",
-  biceps: "肱二头肌",
-  triceps: "肱三头肌",
-  abs: "腹部",
-  glutes: "臀部",
-  quads: "股四头肌",
-  hamstrings: "腘绳肌",
-  calves: "小腿",
+  bicepsLongHead: "肱二头肌长头",
+  bicepsShortHead: "肱二头肌短头",
+  brachialis: "肱肌",
+  brachioradialis: "肱桡肌",
+  tricepsLongHead: "肱三头肌长头",
+  tricepsLateralHead: "肱三头肌外侧头",
+  tricepsMedialHead: "肱三头肌内侧头",
+  rectusAbdominis: "腹直肌",
+  externalOblique: "腹外斜肌",
+  internalOblique: "腹内斜肌",
+  transversusAbdominis: "腹横肌",
+  gluteMaximus: "臀大肌",
+  gluteMedius: "臀中肌",
+  gluteMinimus: "臀小肌",
+  adductorMagnus: "大收肌",
+  rectusFemoris: "股直肌",
+  vastusLateralis: "股外侧肌",
+  vastusMedialis: "股内侧肌",
+  vastusIntermedius: "股中间肌",
+  bicepsFemorisLongHead: "股二头肌长头",
+  bicepsFemorisShortHead: "股二头肌短头",
+  semitendinosus: "半腱肌",
+  semimembranosus: "半膜肌",
+  gastrocnemiusMedial: "腓肠肌内侧头",
+  gastrocnemiusLateral: "腓肠肌外侧头",
+  soleus: "比目鱼肌",
 };
+
+function roleFor(contribution: number): MuscleActivation["role"] {
+  if (contribution >= 70) return "primary";
+  if (contribution >= 35) return "secondary";
+  return "supporting";
+}
+
+function defineExercise(
+  exerciseId: string,
+  tip: string,
+  muscles: FineActivation[],
+): ExerciseMuscleContribution {
+  return {
+    exerciseId,
+    tip,
+    muscles: muscles
+      .map(([muscle, contribution]) => ({
+        muscle,
+        contribution,
+        role: roleFor(contribution),
+      }))
+      .sort((first, second) => second.contribution - first.contribution),
+  };
+}
+
+const baseMuscleMap: Record<string, ExerciseMuscleContribution> = {
+  "Bench Press": defineExercise("Bench Press", "平板卧推更偏胸大肌胸肋头，同时前三角和三头参与伸肘与水平推。", [
+    ["pecSternocostal", 78],
+    ["pecAbdominal", 48],
+    ["pecClavicular", 38],
+    ["tricepsLateralHead", 46],
+    ["tricepsMedialHead", 42],
+    ["frontDeltoid", 40],
+    ["serratusAnterior", 24],
+  ]),
+  "Incline Bench Press": defineExercise("Incline Bench Press", "上斜推举会把压力上移到胸大肌锁骨头，并增加前三角参与。", [
+    ["pecClavicular", 80],
+    ["frontDeltoid", 58],
+    ["pecSternocostal", 46],
+    ["tricepsLateralHead", 40],
+    ["tricepsMedialHead", 36],
+    ["serratusAnterior", 24],
+    ["pecAbdominal", 18],
+  ]),
+  "Dumbbell Bench Press": defineExercise("Dumbbell Bench Press", "哑铃平板卧推保留中胸主导，并因轨迹自由度增加肩胛和前锯肌稳定需求。", [
+    ["pecSternocostal", 74],
+    ["pecAbdominal", 44],
+    ["pecClavicular", 36],
+    ["frontDeltoid", 38],
+    ["tricepsLateralHead", 36],
+    ["tricepsMedialHead", 34],
+    ["serratusAnterior", 30],
+  ]),
+  "Dumbbell Incline Press": defineExercise("Dumbbell Incline Press", "上斜哑铃推更偏上胸和前三角，三头作为次要伸肘肌参与。", [
+    ["pecClavicular", 78],
+    ["frontDeltoid", 60],
+    ["pecSternocostal", 42],
+    ["tricepsLateralHead", 34],
+    ["tricepsMedialHead", 32],
+    ["serratusAnterior", 28],
+  ]),
+  "Chest Press": defineExercise("Chest Press", "器械推胸路径更固定，主要刺激胸大肌胸肋头，肩和三头参与相对稳定。", [
+    ["pecSternocostal", 76],
+    ["pecAbdominal", 42],
+    ["pecClavicular", 34],
+    ["tricepsLateralHead", 38],
+    ["tricepsMedialHead", 36],
+    ["frontDeltoid", 34],
+  ]),
+  "Cable Fly": defineExercise("Cable Fly", "夹胸减少伸肘需求，更集中在胸大肌水平内收；角度会影响上中下胸比例。", [
+    ["pecSternocostal", 74],
+    ["pecClavicular", 54],
+    ["pecAbdominal", 46],
+    ["frontDeltoid", 24],
+    ["serratusAnterior", 20],
+  ]),
+  "Pec Deck": defineExercise("Pec Deck", "蝴蝶机夹胸以胸大肌内收为主，三头参与很少。", [
+    ["pecSternocostal", 78],
+    ["pecClavicular", 52],
+    ["pecAbdominal", 44],
+    ["frontDeltoid", 22],
+  ]),
+  "Push-up": defineExercise("Push-up", "俯卧撑是闭链推，胸、三头、前三角参与，并需要前锯肌控制肩胛。", [
+    ["pecSternocostal", 70],
+    ["tricepsMedialHead", 44],
+    ["tricepsLateralHead", 42],
+    ["frontDeltoid", 38],
+    ["serratusAnterior", 36],
+    ["pecClavicular", 30],
+    ["rectusAbdominis", 24],
+  ]),
+  Dip: defineExercise("Dip", "双杠臂屈伸更偏下胸和三头长头，躯干越前倾胸部参与越高。", [
+    ["pecAbdominal", 74],
+    ["tricepsLongHead", 58],
+    ["tricepsLateralHead", 48],
+    ["tricepsMedialHead", 42],
+    ["pecSternocostal", 40],
+    ["frontDeltoid", 30],
+  ]),
+
+  "Pull-up": defineExercise("Pull-up", "引体向上以背阔肌和大圆肌肩内收/伸展为主，肘屈肌和肩胛稳定肌共同参与。", [
+    ["latissimusDorsi", 82],
+    ["teresMajor", 58],
+    ["bicepsLongHead", 46],
+    ["bicepsShortHead", 42],
+    ["brachialis", 38],
+    ["lowerTrapezius", 34],
+    ["rhomboidMajor", 30],
+    ["rhomboidMinor", 24],
+  ]),
+  "Lat Pulldown": defineExercise("Lat Pulldown", "高位下拉主要是背阔肌和大圆肌，手臂屈肌辅助，肩胛下沉时下斜方参与增加。", [
+    ["latissimusDorsi", 80],
+    ["teresMajor", 56],
+    ["bicepsLongHead", 42],
+    ["bicepsShortHead", 38],
+    ["brachialis", 34],
+    ["lowerTrapezius", 32],
+    ["rhomboidMajor", 26],
+    ["rearDeltoid", 20],
+  ]),
+  "Barbell Row": defineExercise("Barbell Row", "杠铃划船不是只练背阔：菱形肌、斜方中束、后三角和竖脊肌稳定也会明显参与。", [
+    ["rhomboidMajor", 72],
+    ["midTrapezius", 68],
+    ["latissimusDorsi", 62],
+    ["teresMajor", 44],
+    ["rearDeltoid", 42],
+    ["erectorSpinae", 38],
+    ["bicepsLongHead", 36],
+    ["bicepsShortHead", 32],
+  ]),
+  "Dumbbell Row": defineExercise("Dumbbell Row", "单臂哑铃划船更容易做出肩伸展，背阔和大圆肌比例更高，同时菱形肌稳定肩胛。", [
+    ["latissimusDorsi", 72],
+    ["teresMajor", 56],
+    ["rhomboidMajor", 52],
+    ["midTrapezius", 46],
+    ["rearDeltoid", 36],
+    ["bicepsLongHead", 34],
+    ["brachialis", 30],
+  ]),
+  "Seated Cable Row": defineExercise("Seated Cable Row", "坐姿划船更偏肩胛后缩和水平拉，菱形肌、斜方中束和背阔共同参与。", [
+    ["rhomboidMajor", 68],
+    ["midTrapezius", 64],
+    ["latissimusDorsi", 56],
+    ["teresMajor", 44],
+    ["rearDeltoid", 36],
+    ["bicepsLongHead", 34],
+    ["bicepsShortHead", 30],
+  ]),
+  "Chest Supported Row": defineExercise("Chest Supported Row", "胸托划船降低竖脊肌负担，更集中在菱形肌、斜方中束、背阔和后三角。", [
+    ["rhomboidMajor", 72],
+    ["midTrapezius", 70],
+    ["latissimusDorsi", 52],
+    ["rearDeltoid", 44],
+    ["teresMajor", 40],
+    ["bicepsLongHead", 30],
+  ]),
+  "T-Bar Row": defineExercise("T-Bar Row", "T-Bar 划船通常兼具背阔肩伸展和中背后缩，重量较大时竖脊肌稳定也会上升。", [
+    ["latissimusDorsi", 66],
+    ["rhomboidMajor", 64],
+    ["midTrapezius", 62],
+    ["teresMajor", 48],
+    ["rearDeltoid", 38],
+    ["erectorSpinae", 34],
+    ["bicepsLongHead", 32],
+  ]),
+  Deadlift: defineExercise("Deadlift", "硬拉是髋伸展和脊柱抗屈曲为主，不应只显示背或腿。", [
+    ["erectorSpinae", 82],
+    ["gluteMaximus", 72],
+    ["bicepsFemorisLongHead", 58],
+    ["semitendinosus", 50],
+    ["semimembranosus", 48],
+    ["adductorMagnus", 42],
+    ["upperTrapezius", 34],
+    ["latissimusDorsi", 32],
+    ["vastusLateralis", 28],
+    ["vastusMedialis", 26],
+  ]),
+  "Straight-arm Pulldown": defineExercise("Straight-arm Pulldown", "直臂下压减少肘屈肌贡献，更集中在背阔肌、大圆肌和肩胛控制。", [
+    ["latissimusDorsi", 82],
+    ["teresMajor", 62],
+    ["tricepsLongHead", 28],
+    ["lowerTrapezius", 28],
+    ["rectusAbdominis", 22],
+  ]),
+
+  "Overhead Press": defineExercise("Overhead Press", "推举以前三角和中三角为主，三头伸肘，斜方上束和前锯肌帮助上旋稳定。", [
+    ["frontDeltoid", 76],
+    ["sideDeltoid", 58],
+    ["tricepsLateralHead", 44],
+    ["tricepsMedialHead", 40],
+    ["upperTrapezius", 38],
+    ["serratusAnterior", 34],
+    ["pecClavicular", 24],
+  ]),
+  "Dumbbell Shoulder Press": defineExercise("Dumbbell Shoulder Press", "哑铃肩推保留前三角主导，并增加肩胛稳定和中三角参与。", [
+    ["frontDeltoid", 74],
+    ["sideDeltoid", 60],
+    ["tricepsLateralHead", 38],
+    ["tricepsMedialHead", 34],
+    ["upperTrapezius", 34],
+    ["serratusAnterior", 32],
+  ]),
+  "Lateral Raise": defineExercise("Lateral Raise", "侧平举主要刺激中三角，斜方上束作为肩胛上旋辅助，不应整肩全红。", [
+    ["sideDeltoid", 86],
+    ["upperTrapezius", 32],
+    ["frontDeltoid", 18],
+    ["rearDeltoid", 16],
+  ]),
+  "Cable Lateral Raise": defineExercise("Cable Lateral Raise", "绳索侧平举张力更连续，仍以中三角为主。", [
+    ["sideDeltoid", 88],
+    ["upperTrapezius", 28],
+    ["frontDeltoid", 16],
+    ["rearDeltoid", 16],
+  ]),
+  "Rear Delt Fly": defineExercise("Rear Delt Fly", "反向飞鸟主要是后三角水平外展，中背肌群负责肩胛控制。", [
+    ["rearDeltoid", 82],
+    ["rhomboidMajor", 40],
+    ["midTrapezius", 38],
+    ["infraspinatus", 30],
+    ["teresMinor", 26],
+  ]),
+  "Face Pull": defineExercise("Face Pull", "面拉结合后三角、外旋肌和中下斜方/菱形肌，不是单纯后三角。", [
+    ["rearDeltoid", 68],
+    ["infraspinatus", 54],
+    ["teresMinor", 48],
+    ["midTrapezius", 46],
+    ["rhomboidMinor", 36],
+    ["lowerTrapezius", 34],
+  ]),
+  "Arnold Press": defineExercise("Arnold Press", "阿诺德推举比普通肩推更强调前三角，并保留中三角和三头参与。", [
+    ["frontDeltoid", 78],
+    ["sideDeltoid", 54],
+    ["tricepsLateralHead", 36],
+    ["tricepsMedialHead", 32],
+    ["upperTrapezius", 30],
+    ["serratusAnterior", 28],
+  ]),
+  "Upright Row": defineExercise("Upright Row", "直立划船主要中三角和斜方上束参与，动作舒适度和肩部感觉要优先。", [
+    ["sideDeltoid", 70],
+    ["upperTrapezius", 58],
+    ["frontDeltoid", 28],
+    ["bicepsShortHead", 24],
+    ["brachialis", 22],
+  ]),
+
+  "Barbell Curl": defineExercise("Barbell Curl", "杠铃弯举以肱二头肌两头和肱肌为主，前臂屈肌作为辅助。", [
+    ["bicepsShortHead", 76],
+    ["bicepsLongHead", 72],
+    ["brachialis", 54],
+    ["brachioradialis", 28],
+  ]),
+  "Dumbbell Curl": defineExercise("Dumbbell Curl", "哑铃弯举可通过旋后增加肱二头肌参与，肱肌稳定参与。", [
+    ["bicepsLongHead", 74],
+    ["bicepsShortHead", 72],
+    ["brachialis", 50],
+    ["brachioradialis", 30],
+  ]),
+  "Incline Dumbbell Curl": defineExercise("Incline Dumbbell Curl", "上斜弯举肩伸位拉长肱二头肌长头，因此长头比例更高。", [
+    ["bicepsLongHead", 82],
+    ["bicepsShortHead", 62],
+    ["brachialis", 44],
+    ["brachioradialis", 24],
+  ]),
+  "Hammer Curl": defineExercise("Hammer Curl", "锤式弯举更偏肱肌和肱桡肌，而不是只显示肱二头肌。", [
+    ["brachialis", 76],
+    ["brachioradialis", 72],
+    ["bicepsLongHead", 44],
+    ["bicepsShortHead", 36],
+  ]),
+  "Cable Curl": defineExercise("Cable Curl", "绳索弯举张力更连续，肱二头肌两头和肱肌共同参与。", [
+    ["bicepsShortHead", 74],
+    ["bicepsLongHead", 70],
+    ["brachialis", 52],
+    ["brachioradialis", 26],
+  ]),
+  "Preacher Curl": defineExercise("Preacher Curl", "牧师凳限制肩部摆动，更偏肱二头肌短头和肱肌。", [
+    ["bicepsShortHead", 78],
+    ["brachialis", 58],
+    ["bicepsLongHead", 54],
+    ["brachioradialis", 22],
+  ]),
+  "Concentration Curl": defineExercise("Concentration Curl", "集中弯举减少身体借力，主要显示肱二头肌而不是整条手臂。", [
+    ["bicepsShortHead", 80],
+    ["bicepsLongHead", 66],
+    ["brachialis", 42],
+  ]),
+
+  "Cable Triceps Pushdown": defineExercise("Cable Triceps Pushdown", "下压主要是三头外侧头和内侧头伸肘，长头参与但不是最高。", [
+    ["tricepsLateralHead", 78],
+    ["tricepsMedialHead", 72],
+    ["tricepsLongHead", 48],
+  ]),
+  "Rope Pushdown": defineExercise("Rope Pushdown", "绳索下压和普通下压类似，外侧头/内侧头更明显。", [
+    ["tricepsLateralHead", 76],
+    ["tricepsMedialHead", 72],
+    ["tricepsLongHead", 50],
+  ]),
+  "Overhead Triceps Extension": defineExercise("Overhead Triceps Extension", "过顶臂屈伸让三头长头处在更拉长位置，长头比例更高。", [
+    ["tricepsLongHead", 82],
+    ["tricepsMedialHead", 58],
+    ["tricepsLateralHead", 52],
+  ]),
+  "Skull Crusher": defineExercise("Skull Crusher", "仰卧臂屈伸三头三束都参与，长头和内侧头比例较高。", [
+    ["tricepsLongHead", 76],
+    ["tricepsMedialHead", 66],
+    ["tricepsLateralHead", 60],
+  ]),
+  "Close Grip Bench Press": defineExercise("Close Grip Bench Press", "窄握卧推把推举负担更多转向三头，同时胸和前三角仍参与。", [
+    ["tricepsLateralHead", 72],
+    ["tricepsMedialHead", 68],
+    ["tricepsLongHead", 60],
+    ["pecSternocostal", 46],
+    ["frontDeltoid", 34],
+  ]),
+  "Triceps Kickback": defineExercise("Triceps Kickback", "后踢主要是轻负荷伸肘，三头外侧头和长头更明显。", [
+    ["tricepsLateralHead", 70],
+    ["tricepsLongHead", 62],
+    ["tricepsMedialHead", 50],
+  ]),
+
+  "Back Squat": defineExercise("Back Squat", "深蹲以股四头肌和臀大肌为主，腘绳肌更多负责髋部协同和稳定，不应整腿 100%。", [
+    ["vastusLateralis", 78],
+    ["vastusMedialis", 76],
+    ["vastusIntermedius", 70],
+    ["rectusFemoris", 58],
+    ["gluteMaximus", 62],
+    ["adductorMagnus", 48],
+    ["erectorSpinae", 34],
+    ["bicepsFemorisLongHead", 26],
+    ["gastrocnemiusMedial", 20],
+  ]),
+  "Front Squat": defineExercise("Front Squat", "前蹲躯干更直，股四头肌比例更高，臀大肌和竖脊肌参与相对降低。", [
+    ["vastusMedialis", 82],
+    ["vastusLateralis", 80],
+    ["vastusIntermedius", 76],
+    ["rectusFemoris", 66],
+    ["gluteMaximus", 48],
+    ["adductorMagnus", 40],
+    ["erectorSpinae", 28],
+  ]),
+  "Leg Press": defineExercise("Leg Press", "腿举以股四头肌为主，脚位和深度会改变臀大肌/大收肌参与。", [
+    ["vastusLateralis", 78],
+    ["vastusMedialis", 76],
+    ["vastusIntermedius", 72],
+    ["rectusFemoris", 58],
+    ["gluteMaximus", 44],
+    ["adductorMagnus", 34],
+  ]),
+  "Hack Squat": defineExercise("Hack Squat", "哈克深蹲路径固定，更偏股四头肌，臀和腘绳肌辅助。", [
+    ["vastusLateralis", 84],
+    ["vastusMedialis", 82],
+    ["vastusIntermedius", 76],
+    ["rectusFemoris", 62],
+    ["gluteMaximus", 34],
+    ["adductorMagnus", 28],
+  ]),
+  "Bulgarian Split Squat": defineExercise("Bulgarian Split Squat", "保加利亚分腿蹲同时需要股四头、臀大肌和臀中肌稳定骨盆。", [
+    ["vastusMedialis", 72],
+    ["vastusLateralis", 70],
+    ["gluteMaximus", 66],
+    ["gluteMedius", 54],
+    ["rectusFemoris", 48],
+    ["adductorMagnus", 36],
+    ["bicepsFemorisLongHead", 24],
+  ]),
+  "Leg Extension": defineExercise("Leg Extension", "腿屈伸是膝伸展孤立，主要显示股四头各头，不把臀和腘绳肌染色。", [
+    ["rectusFemoris", 82],
+    ["vastusMedialis", 78],
+    ["vastusLateralis", 76],
+    ["vastusIntermedius", 70],
+  ]),
+  Lunge: defineExercise("Lunge", "弓步蹲同时刺激股四头、臀大肌和臀中肌，步幅越大臀部比例越高。", [
+    ["gluteMaximus", 68],
+    ["vastusMedialis", 66],
+    ["vastusLateralis", 64],
+    ["gluteMedius", 48],
+    ["rectusFemoris", 46],
+    ["adductorMagnus", 34],
+  ]),
+  "Step-up": defineExercise("Step-up", "登台阶需要股四头伸膝、臀大肌伸髋和臀中肌控制骨盆。", [
+    ["gluteMaximus", 70],
+    ["vastusMedialis", 64],
+    ["vastusLateralis", 62],
+    ["gluteMedius", 52],
+    ["rectusFemoris", 42],
+    ["gastrocnemiusMedial", 20],
+  ]),
+
+  "Romanian Deadlift": defineExercise("Romanian Deadlift", "罗马尼亚硬拉以髋铰链为主，腘绳肌长头/半腱/半膜和臀大肌明显参与。", [
+    ["bicepsFemorisLongHead", 80],
+    ["semitendinosus", 76],
+    ["semimembranosus", 72],
+    ["gluteMaximus", 66],
+    ["erectorSpinae", 46],
+    ["adductorMagnus", 34],
+    ["bicepsFemorisShortHead", 22],
+  ]),
+  "Single-leg Romanian Deadlift": defineExercise("Single-leg Romanian Deadlift", "单腿 RDL 在腘绳肌和臀大肌基础上，更强调臀中肌稳定骨盆。", [
+    ["bicepsFemorisLongHead", 76],
+    ["semitendinosus", 72],
+    ["semimembranosus", 68],
+    ["gluteMaximus", 64],
+    ["gluteMedius", 54],
+    ["erectorSpinae", 36],
+  ]),
+  "Seated Leg Curl": defineExercise("Seated Leg Curl", "坐姿腿弯举偏膝屈曲，腘绳肌各头参与，股二头肌短头比髋铰链动作更明显。", [
+    ["semitendinosus", 76],
+    ["semimembranosus", 74],
+    ["bicepsFemorisLongHead", 70],
+    ["bicepsFemorisShortHead", 62],
+    ["gastrocnemiusMedial", 18],
+    ["gastrocnemiusLateral", 16],
+  ]),
+  "Lying Leg Curl": defineExercise("Lying Leg Curl", "俯卧腿弯举同样是膝屈曲为主，股二头肌和半腱/半膜共同参与。", [
+    ["bicepsFemorisLongHead", 74],
+    ["bicepsFemorisShortHead", 68],
+    ["semitendinosus", 72],
+    ["semimembranosus", 68],
+    ["gastrocnemiusMedial", 18],
+  ]),
+  "Good Morning": defineExercise("Good Morning", "早安式是髋铰链和脊柱抗屈曲，腘绳肌、臀大肌和竖脊肌都明显参与。", [
+    ["erectorSpinae", 78],
+    ["bicepsFemorisLongHead", 72],
+    ["semitendinosus", 68],
+    ["semimembranosus", 64],
+    ["gluteMaximus", 58],
+    ["adductorMagnus", 30],
+  ]),
+  "Nordic Curl": defineExercise("Nordic Curl", "北欧腿弯举高度偏腘绳肌膝屈曲，臀部不是主要高亮对象。", [
+    ["bicepsFemorisLongHead", 82],
+    ["semitendinosus", 80],
+    ["semimembranosus", 78],
+    ["bicepsFemorisShortHead", 70],
+    ["gastrocnemiusMedial", 20],
+  ]),
+
+  "Hip Thrust": defineExercise("Hip Thrust", "臀推以臀大肌髋伸展为主，臀中/臀小负责骨盆稳定，腘绳肌只作为次要参与。", [
+    ["gluteMaximus", 88],
+    ["gluteMedius", 50],
+    ["gluteMinimus", 38],
+    ["adductorMagnus", 34],
+    ["bicepsFemorisLongHead", 30],
+    ["semitendinosus", 26],
+    ["erectorSpinae", 20],
+  ]),
+  "Glute Bridge": defineExercise("Glute Bridge", "臀桥与臀推类似，但负荷和活动范围通常较小，仍以臀大肌为主。", [
+    ["gluteMaximus", 84],
+    ["gluteMedius", 44],
+    ["gluteMinimus", 34],
+    ["bicepsFemorisLongHead", 28],
+    ["semitendinosus", 24],
+  ]),
+  "Cable Kickback": defineExercise("Cable Kickback", "绳索后踢是髋伸展/后伸，主要显示臀大肌，臀中肌辅助稳定。", [
+    ["gluteMaximus", 82],
+    ["gluteMedius", 42],
+    ["gluteMinimus", 28],
+    ["bicepsFemorisLongHead", 22],
+  ]),
+  "Walking Lunge": defineExercise("Walking Lunge", "行走弓步同时挑战臀大肌、股四头和臀中肌稳定。", [
+    ["gluteMaximus", 70],
+    ["vastusMedialis", 62],
+    ["vastusLateralis", 60],
+    ["gluteMedius", 52],
+    ["rectusFemoris", 42],
+    ["adductorMagnus", 34],
+  ]),
+  "Abduction Machine": defineExercise("Abduction Machine", "髋外展机应主要高亮臀中肌/臀小肌，而不是整块臀部。", [
+    ["gluteMedius", 86],
+    ["gluteMinimus", 72],
+    ["gluteMaximus", 30],
+  ]),
+
+  "Standing Calf Raise": defineExercise("Standing Calf Raise", "站姿提踵膝较伸直，腓肠肌内外侧头更主导，比目鱼肌次要。", [
+    ["gastrocnemiusMedial", 82],
+    ["gastrocnemiusLateral", 80],
+    ["soleus", 48],
+  ]),
+  "Seated Calf Raise": defineExercise("Seated Calf Raise", "坐姿提踵膝屈曲会降低腓肠肌优势，更偏比目鱼肌。", [
+    ["soleus", 86],
+    ["gastrocnemiusMedial", 46],
+    ["gastrocnemiusLateral", 44],
+  ]),
+  "Leg Press Calf Raise": defineExercise("Leg Press Calf Raise", "腿举机提踵通常接近膝伸位，腓肠肌主导，比目鱼肌辅助。", [
+    ["gastrocnemiusMedial", 78],
+    ["gastrocnemiusLateral", 76],
+    ["soleus", 50],
+  ]),
+  "Single-leg Calf Raise": defineExercise("Single-leg Calf Raise", "单腿提踵主打腓肠肌，也需要比目鱼肌和踝部稳定。", [
+    ["gastrocnemiusMedial", 80],
+    ["gastrocnemiusLateral", 78],
+    ["soleus", 54],
+  ]),
+
+  "Cable Crunch": defineExercise("Cable Crunch", "绳索卷腹以腹直肌屈曲为主，斜肌和腹横肌辅助稳定。", [
+    ["rectusAbdominis", 84],
+    ["externalOblique", 44],
+    ["internalOblique", 38],
+    ["transversusAbdominis", 30],
+  ]),
+  "Hanging Leg Raise": defineExercise("Hanging Leg Raise", "悬垂举腿需要腹直肌控制骨盆，髂腰肌不在当前高亮 key 中，因此不伪造。", [
+    ["rectusAbdominis", 72],
+    ["externalOblique", 42],
+    ["internalOblique", 38],
+    ["transversusAbdominis", 34],
+  ]),
+  Plank: defineExercise("Plank", "平板支撑以抗伸展稳定为主，腹横肌和腹直肌共同参与。", [
+    ["transversusAbdominis", 72],
+    ["rectusAbdominis", 66],
+    ["internalOblique", 52],
+    ["externalOblique", 46],
+    ["serratusAnterior", 24],
+  ]),
+  "Ab Wheel Rollout": defineExercise("Ab Wheel Rollout", "健腹轮主要挑战抗伸展，腹直肌和腹横肌负担都高。", [
+    ["rectusAbdominis", 82],
+    ["transversusAbdominis", 68],
+    ["externalOblique", 48],
+    ["internalOblique", 44],
+    ["serratusAnterior", 30],
+  ]),
+  "Reverse Crunch": defineExercise("Reverse Crunch", "反向卷腹更偏骨盆后倾控制，腹直肌主导。", [
+    ["rectusAbdominis", 80],
+    ["externalOblique", 40],
+    ["internalOblique", 36],
+    ["transversusAbdominis", 30],
+  ]),
+  "Pallof Press": defineExercise("Pallof Press", "Pallof Press 是抗旋转核心，腹斜肌和腹横肌比腹直肌更关键。", [
+    ["externalOblique", 72],
+    ["internalOblique", 70],
+    ["transversusAbdominis", 62],
+    ["rectusAbdominis", 34],
+    ["serratusAnterior", 24],
+  ]),
+};
+
+const groupFallbacks: Record<Exclude<MuscleGroup, "All">, ExerciseMuscleContribution> = {
+  Chest: baseMuscleMap["Bench Press"],
+  Back: baseMuscleMap["Lat Pulldown"],
+  Shoulders: baseMuscleMap["Overhead Press"],
+  Biceps: baseMuscleMap["Barbell Curl"],
+  Triceps: baseMuscleMap["Cable Triceps Pushdown"],
+  Quads: baseMuscleMap["Back Squat"],
+  Hamstrings: baseMuscleMap["Romanian Deadlift"],
+  Glutes: baseMuscleMap["Hip Thrust"],
+  Calves: baseMuscleMap["Standing Calf Raise"],
+  Abs: baseMuscleMap["Cable Crunch"],
+};
+
+const normalizedExerciseMap = new Map(
+  Object.entries(baseMuscleMap).map(([exerciseName, contribution]) => (
+    [exerciseName.trim().toLowerCase(), contribution]
+  )),
+);
+
+normalizedExerciseMap.set("inclcied bench press", baseMuscleMap["Incline Bench Press"]);
+normalizedExerciseMap.set("inlcied bench press", baseMuscleMap["Incline Bench Press"]);
+normalizedExerciseMap.set("dumb bell inclcied press", baseMuscleMap["Dumbbell Incline Press"]);
 
 export function getExerciseMuscleContribution(
   exerciseName: string,
-  muscleGroup: string,
+  muscleGroup: MuscleGroup,
 ) {
-  return baseMuscleMap[exerciseName] ?? groupFallbacks[muscleGroup];
+  if (muscleGroup === "All") {
+    return undefined;
+  }
+
+  return normalizedExerciseMap.get(exerciseName.trim().toLowerCase())
+    ?? groupFallbacks[muscleGroup];
 }
