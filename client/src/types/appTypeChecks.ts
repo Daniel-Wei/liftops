@@ -58,7 +58,7 @@ export function isPreCheckInput(value: unknown): value is PreCheckDetailsLog {
     isNumber(value.sleepHours)
     && isNumber(value.soreness)
     && isNumber(value.motivation)
-    && isNumber(value.restingHeartRateDelta)
+    && isNumber(value.restingHeartRateBpm)
     && isNumber(value.previousSessionRpe)
     && isNumber(value.previousSessionDurationMinutes)
   );
@@ -69,7 +69,7 @@ export function isMainDriverId(value: unknown): value is MainDriverId {
   return value === MainDriverId.ShortSleep
     || value === MainDriverId.HighSoreness
     || value === MainDriverId.LowMotivation
-    || value === MainDriverId.RestingHeartRateAboveBaseline
+    || value === MainDriverId.HighRestingHeartRate
     || value === MainDriverId.HardPreviousSessionLoad
     || value === MainDriverId.NoMajorIssues;
 }

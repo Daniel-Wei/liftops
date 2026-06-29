@@ -159,7 +159,7 @@ export function TrainingPage() {
         <h1 className="page-title">记录今天完成的训练</h1>
       </header>
 
-      <SectionCard title="记录训练" eyebrow="训练后填写">
+      <SectionCard title="记录训练" eyebrow="训练后填写" className="training-record-card">
         <div className="training-session-form training-session-form--header">
           <label className="training-form-field">
             <span className="training-form-label">训练日期</span>
@@ -236,7 +236,7 @@ export function TrainingPage() {
                       </tbody>
                     </table>
                   </div>
-                  <button type="button" className="button-secondary training-inline-action" onClick={() => dispatch(addTrainingSet(exercise.id))}>+ 添加一组</button>
+                  <button type="button" className="button-dark training-inline-action" onClick={() => dispatch(addTrainingSet(exercise.id))}>+ 添加一组</button>
                 </div>
                 <MuscleViewer
                   title={`动作肌群预览：${getExerciseDisplayLabel(exercise.exerciseName)}`}

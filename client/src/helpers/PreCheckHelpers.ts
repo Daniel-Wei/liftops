@@ -29,7 +29,7 @@ function isSamePreCheckInput(firstInput: PreCheckDetailsLog, secondInput: PreChe
     firstInput.sleepHours === secondInput.sleepHours
     && firstInput.soreness === secondInput.soreness
     && firstInput.motivation === secondInput.motivation
-    && firstInput.restingHeartRateDelta === secondInput.restingHeartRateDelta
+    && firstInput.restingHeartRateBpm === secondInput.restingHeartRateBpm
     && firstInput.previousSessionRpe === secondInput.previousSessionRpe
     && firstInput.previousSessionDurationMinutes === secondInput.previousSessionDurationMinutes
   );

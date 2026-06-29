@@ -43,24 +43,24 @@ function getSleepAdjustment(sleepHours: number) {
   return 0;
 }
 
-function getRestingHeartRateAdjustment(restingHeartRateDelta: number) {
-  if (restingHeartRateDelta <= -3) {
+function getRestingHeartRateAdjustment(restingHeartRateBpm: number) {
+  if (restingHeartRateBpm <= 55) {
     return 3;
   }
 
-  if (restingHeartRateDelta <= 2) {
+  if (restingHeartRateBpm <= 70) {
     return 0;
   }
 
-  if (restingHeartRateDelta <= 6) {
+  if (restingHeartRateBpm <= 80) {
     return -5;
   }
 
-  if (restingHeartRateDelta <= 10) {
+  if (restingHeartRateBpm <= 90) {
     return -10;
   }
 
-  if (restingHeartRateDelta <= 15) {
+  if (restingHeartRateBpm <= 100) {
     return -16;
   }
 
@@ -155,11 +155,11 @@ function getMainDrivers(input: PreCheckDetailsLog) {
     });
   }
 
-  if (input.restingHeartRateDelta > 6) {
+  if (input.restingHeartRateBpm > 85) {
     drivers.push({
-      id: MainDriverId.RestingHeartRateAboveBaseline,
-      message: "静息心率高于基线",
-      reason: "比基线高出 6 次/分以上",
+      id: MainDriverId.HighRestingHeartRate,
+      message: "静息心率偏高",
+      reason: "静息心率高于 85 次/分",
     });
   }
 
@@ -188,7 +188,7 @@ export function calculateReadiness(input: PreCheckDetailsLog): ReadinessResult {
   const score = clampScore(
     78
       + getSleepAdjustment(input.sleepHours)
-      + getRestingHeartRateAdjustment(input.restingHeartRateDelta)
+      + getRestingHeartRateAdjustment(input.restingHeartRateBpm)
       + getPreviousSessionLoadAdjustment(previousSessionLoad)
       + getMotivationAdjustment(input.motivation)
       + getSorenessAdjustment(input.soreness),

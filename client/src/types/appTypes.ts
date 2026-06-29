@@ -31,7 +31,7 @@ export type PreCheckDetailsLog = {
   sleepHours: number;
   soreness: number;
   motivation: number;
-  restingHeartRateDelta: number;
+  restingHeartRateBpm: number;
   previousSessionRpe: number;
   previousSessionDurationMinutes: number;
 };
@@ -40,7 +40,7 @@ export enum MainDriverId {
   ShortSleep = "shortSleep",
   HighSoreness = "highSoreness",
   LowMotivation = "lowMotivation",
-  RestingHeartRateAboveBaseline = "restingHeartRateAboveBaseline",
+  HighRestingHeartRate = "highRestingHeartRate",
   HardPreviousSessionLoad = "hardPreviousSessionLoad",
   NoMajorIssues = "noMajorIssues",
 }

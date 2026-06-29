@@ -11,6 +11,7 @@ export type PreCheckDto = {
   sleepHours?: number;
   sorenessRating?: number;
   motivationRating?: number;
+  restingHeartRateBpm?: number;
   restingHeartRateDelta?: number;
   previousSessionRpe?: number;
   previousSessionDurationMinutes?: number;

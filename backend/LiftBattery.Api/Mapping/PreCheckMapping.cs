@@ -18,7 +18,8 @@ public static class PreCheckMapping
             log.SleepHours,
             log.SorenessRating,
             log.MotivationRating,
-            log.RestingHeartRateDelta,
+            NormalizeRestingHeartRateBpm(log.RestingHeartRateBpm),
+            null,
             log.PreviousSessionRpe,
             log.PreviousSessionDurationMinutes);
     }
@@ -37,7 +38,10 @@ public static class PreCheckMapping
             dto.SleepHours ?? GetSleepHours(dto.SleepQuality),
             dto.SorenessRating ?? ScaleFiveToTen(dto.Soreness),
             dto.MotivationRating ?? ScaleFiveToTen(dto.Motivation),
-            dto.RestingHeartRateDelta ?? GetHeartRateDelta(dto.Stress),
+            dto.RestingHeartRateBpm
+                ?? (dto.RestingHeartRateDelta.HasValue
+                    ? NormalizeRestingHeartRateBpm(dto.RestingHeartRateDelta.Value)
+                    : GetRestingHeartRateBpm(dto.Stress)),
             dto.PreviousSessionRpe ?? 1,
             dto.PreviousSessionDurationMinutes ?? 20,
             existingLog?.CreatedAtUtc ?? now,
@@ -61,15 +65,20 @@ public static class PreCheckMapping
         return Math.Clamp(value * 2, 1, 10);
     }
 
-    private static int GetHeartRateDelta(int stress)
+    private static int NormalizeRestingHeartRateBpm(int value)
+    {
+        return value < 30 ? 65 + value : value;
+    }
+
+    private static int GetRestingHeartRateBpm(int stress)
     {
         return Math.Clamp(stress, 1, 5) switch
         {
-            1 => 0,
-            2 => 2,
-            3 => 6,
-            4 => 10,
-            _ => 14,
+            1 => 55,
+            2 => 65,
+            3 => 78,
+            4 => 92,
+            _ => 105,
         };
     }
 }

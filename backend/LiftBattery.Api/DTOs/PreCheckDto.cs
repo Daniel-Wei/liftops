@@ -11,6 +11,7 @@ public sealed record PreCheckDto(
     decimal? SleepHours = null,
     int? SorenessRating = null,
     int? MotivationRating = null,
+    int? RestingHeartRateBpm = null,
     int? RestingHeartRateDelta = null,
     int? PreviousSessionRpe = null,
     int? PreviousSessionDurationMinutes = null);

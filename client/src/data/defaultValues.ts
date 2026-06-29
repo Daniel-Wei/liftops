@@ -18,7 +18,7 @@ export const initialPreCheckDetailsInput: PreCheckDetailsLog = {
   sleepHours: 7.5,
   soreness: 3,
   motivation: 7,
-  restingHeartRateDelta: 1,
+  restingHeartRateBpm: 65,
   previousSessionRpe: 7,
   previousSessionDurationMinutes: 60,
 };

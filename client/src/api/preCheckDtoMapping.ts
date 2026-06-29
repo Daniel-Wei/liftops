@@ -47,20 +47,24 @@ function getSleepHoursFromQuality(sleepQuality: number) {
   return sleepHoursByQuality[clamp(sleepQuality, 1, 5)] ?? initialPreCheckDetailsInput.sleepHours;
 }
 
-function getStressFromRestingHeartRateDelta(restingHeartRateDelta: number) {
-  if (restingHeartRateDelta <= 0) {
+function normalizeLegacyRestingHeartRate(value: number) {
+  return value < 30 ? 65 + value : value;
+}
+
+function getStressFromRestingHeartRateBpm(restingHeartRateBpm: number) {
+  if (restingHeartRateBpm <= 55) {
     return 1;
   }
 
-  if (restingHeartRateDelta <= 4) {
+  if (restingHeartRateBpm <= 70) {
     return 2;
   }
 
-  if (restingHeartRateDelta <= 8) {
+  if (restingHeartRateBpm <= 85) {
     return 3;
   }
 
-  if (restingHeartRateDelta <= 12) {
+  if (restingHeartRateBpm <= 100) {
     return 4;
   }
 
@@ -91,13 +95,13 @@ export function toPreCheckDto(input: PreCheckDetailsLog, savedLog?: PreCheckLog)
     date: getTodayDate(),
     sleepQuality: getSleepQualityFromHours(input.sleepHours),
     soreness: scaleTenToFive(input.soreness),
-    stress: getStressFromRestingHeartRateDelta(input.restingHeartRateDelta),
+    stress: getStressFromRestingHeartRateBpm(input.restingHeartRateBpm),
     motivation: scaleTenToFive(input.motivation),
     energy: scaleTenToFive(input.motivation),
     sleepHours: input.sleepHours,
     sorenessRating: input.soreness,
     motivationRating: input.motivation,
-    restingHeartRateDelta: input.restingHeartRateDelta,
+    restingHeartRateBpm: input.restingHeartRateBpm,
     previousSessionRpe: input.previousSessionRpe,
     previousSessionDurationMinutes: input.previousSessionDurationMinutes,
   };
@@ -111,6 +115,7 @@ export function fromPreCheckDto(dto: PreCheckDto, fallbackInput = initialPreChec
   const dtoSleepHours = getDtoNumber(dto, "sleepHours", "SleepHours");
   const dtoSorenessRating = getDtoNumber(dto, "sorenessRating", "SorenessRating");
   const dtoMotivationRating = getDtoNumber(dto, "motivationRating", "MotivationRating");
+  const dtoRestingHeartRateBpm = getDtoNumber(dto, "restingHeartRateBpm", "RestingHeartRateBpm");
   const dtoRestingHeartRateDelta = getDtoNumber(dto, "restingHeartRateDelta", "RestingHeartRateDelta");
   const dtoPreviousSessionRpe = getDtoNumber(dto, "previousSessionRpe", "PreviousSessionRpe");
   const dtoPreviousSessionDurationMinutes = getDtoNumber(
@@ -122,7 +127,10 @@ export function fromPreCheckDto(dto: PreCheckDto, fallbackInput = initialPreChec
     sleepHours: dtoSleepHours ?? getSleepHoursFromQuality(dtoSleepQuality),
     soreness: dtoSorenessRating ?? scaleFiveToTen(dtoSoreness),
     motivation: dtoMotivationRating ?? scaleFiveToTen(dtoMotivation),
-    restingHeartRateDelta: dtoRestingHeartRateDelta ?? fallbackInput.restingHeartRateDelta,
+    restingHeartRateBpm: dtoRestingHeartRateBpm
+      ?? (dtoRestingHeartRateDelta === undefined
+        ? fallbackInput.restingHeartRateBpm
+        : normalizeLegacyRestingHeartRate(dtoRestingHeartRateDelta)),
     previousSessionRpe: dtoPreviousSessionRpe ?? fallbackInput.previousSessionRpe,
     previousSessionDurationMinutes:
       dtoPreviousSessionDurationMinutes ?? fallbackInput.previousSessionDurationMinutes,

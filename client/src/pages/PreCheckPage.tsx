@@ -21,10 +21,6 @@ function getRangeProgress(value: number, min: number, max: number) {
 }
 
 function formatInputValue(value: number, unit: string) {
-  if (unit === "bpm" && value > 0) {
-    return `+${value} ${unit}`;
-  }
-
   return `${value} ${unit}`;
 }
 
@@ -75,7 +71,7 @@ export function PreCheckPage() {
             <p className="landing-eyebrow">今天</p>
             <h1 className="page-title">练前状态检查</h1>
             <p className="page-subtitle">
-              训练前记录睡眠、酸痛、动力、静息心率变化和上次训练负荷，生成今天的训练建议。
+              训练前记录睡眠、酸痛、动力、静息心率次数和上次训练负荷，生成今天的训练建议。
             </p>
           </div>
           

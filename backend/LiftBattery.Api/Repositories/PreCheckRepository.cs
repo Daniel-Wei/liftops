@@ -120,7 +120,7 @@ public sealed class PreCheckRepository : IPreCheckRepository
             SleepHours = log.SleepHours,
             Soreness = log.SorenessRating,
             Motivation = log.MotivationRating,
-            RestingHeartRateDelta = log.RestingHeartRateDelta,
+            RestingHeartRateDelta = log.RestingHeartRateBpm,
             PreviousSessionRpe = log.PreviousSessionRpe,
             PreviousSessionDurationMinutes = log.PreviousSessionDurationMinutes,
             CreatedAtUtc = log.CreatedAtUtc,
@@ -133,7 +133,7 @@ public sealed class PreCheckRepository : IPreCheckRepository
         entity.SleepHours = log.SleepHours;
         entity.Soreness = log.SorenessRating;
         entity.Motivation = log.MotivationRating;
-        entity.RestingHeartRateDelta = log.RestingHeartRateDelta;
+        entity.RestingHeartRateDelta = log.RestingHeartRateBpm;
         entity.PreviousSessionRpe = log.PreviousSessionRpe;
         entity.PreviousSessionDurationMinutes = log.PreviousSessionDurationMinutes;
         entity.UpdatedAtUtc = log.UpdatedAtUtc;

@@ -21,10 +21,12 @@ function getRoleLabel(role: MuscleActivation["role"]) {
 export function MuscleViewer({ title, activations, tip, compact = false }: MuscleViewerProps) {
   const [view, setView] = useState<MuscleView>("front");
   const [selectedMuscleId, setSelectedMuscleId] = useState<MuscleMapKey | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const sortedActivations = useMemo(() => (
     activations.slice().sort((first, second) => second.contribution - first.contribution)
   ), [activations]);
+  const summaryActivations = sortedActivations.slice(0, 3);
 
   return (
     <aside className={compact ? "muscle-viewer muscle-viewer--compact" : "muscle-viewer"}>
@@ -67,24 +69,46 @@ export function MuscleViewer({ title, activations, tip, compact = false }: Muscl
             <MuscleLegend />
           </div>
 
-          <div className="muscle-activation-list">
-            {sortedActivations.map((activation) => (
-              <button
-                type="button"
-                className={
-                  selectedMuscleId === activation.muscle
-                    ? "muscle-activation-row is-selected"
-                    : "muscle-activation-row"
-                }
-                key={activation.muscle}
-                onClick={() => setSelectedMuscleId(activation.muscle)}
-              >
-                <span>{muscleDisplayLabels[activation.muscle]}</span>
-                <strong>{activation.contribution}%</strong>
-                <small>{getRoleLabel(activation.role)}</small>
-                <i style={{ width: `${activation.contribution}%` }} />
-              </button>
-            ))}
+          <div className="muscle-details-panel">
+            <button
+              type="button"
+              className="muscle-details-toggle"
+              aria-expanded={detailsOpen}
+              onClick={() => setDetailsOpen((isOpen) => !isOpen)}
+            >
+              <span>肌群详情</span>
+              <strong>{detailsOpen ? "收起" : `展开 ${sortedActivations.length} 项`}</strong>
+            </button>
+
+            {detailsOpen ? (
+              <div className="muscle-activation-list">
+                {sortedActivations.map((activation) => (
+                  <button
+                    type="button"
+                    className={
+                      selectedMuscleId === activation.muscle
+                        ? "muscle-activation-row is-selected"
+                        : "muscle-activation-row"
+                    }
+                    key={activation.muscle}
+                    onClick={() => setSelectedMuscleId(activation.muscle)}
+                  >
+                    <span>{muscleDisplayLabels[activation.muscle]}</span>
+                    <strong>{activation.contribution}%</strong>
+                    <small>{getRoleLabel(activation.role)}</small>
+                    <i style={{ width: `${activation.contribution}%` }} />
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="muscle-details-summary">
+                {summaryActivations.map((activation) => (
+                  <span key={activation.muscle}>
+                    {muscleDisplayLabels[activation.muscle]} {activation.contribution}%
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

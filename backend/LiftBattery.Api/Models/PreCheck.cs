@@ -7,7 +7,7 @@ public sealed record PreCheckModel(
     decimal SleepHours,
     int SorenessRating,
     int MotivationRating,
-    int RestingHeartRateDelta,
+    int RestingHeartRateBpm,
     int PreviousSessionRpe,
     int PreviousSessionDurationMinutes,
     DateTimeOffset CreatedAtUtc,
@@ -24,12 +24,12 @@ public sealed record PreCheckModel(
 
     public int Soreness => ScaleTenToFive(SorenessRating);
 
-    public int Stress => RestingHeartRateDelta switch
+    public int Stress => RestingHeartRateBpm switch
     {
-        <= 0 => 1,
-        <= 4 => 2,
-        <= 8 => 3,
-        <= 12 => 4,
+        <= 55 => 1,
+        <= 70 => 2,
+        <= 85 => 3,
+        <= 100 => 4,
         _ => 5,
     };
 

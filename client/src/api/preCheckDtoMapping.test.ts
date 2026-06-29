@@ -8,7 +8,7 @@ describe("preCheckDtoMapping", () => {
       sleepHours: 7.5,
       soreness: 4,
       motivation: 8,
-      restingHeartRateDelta: 3,
+      restingHeartRateBpm: 68,
       previousSessionRpe: 9,
       previousSessionDurationMinutes: 75,
     };

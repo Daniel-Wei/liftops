@@ -123,6 +123,7 @@ public sealed class PreCheckService : IPreCheckService
         ValidateRange(dto.SleepHours, 0, 12, nameof(dto.SleepHours));
         ValidateRange(dto.SorenessRating, 1, 10, nameof(dto.SorenessRating));
         ValidateRange(dto.MotivationRating, 1, 10, nameof(dto.MotivationRating));
+        ValidateRange(dto.RestingHeartRateBpm, 40, 120, nameof(dto.RestingHeartRateBpm));
         ValidateRange(dto.RestingHeartRateDelta, -5, 20, nameof(dto.RestingHeartRateDelta));
         ValidateRange(dto.PreviousSessionRpe, 1, 10, nameof(dto.PreviousSessionRpe));
         ValidateRange(
