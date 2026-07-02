@@ -133,10 +133,13 @@ export type TrendReportJobStatus =
   | "Completed"
   | "Failed"
   | "Cancelled"
-  | "Superseded";
+  | "Superseded"
+  | "CancelRequested"
+  | "Outdated";
 
 export type TrendReportJobDto = {
   id: number;
+  dataVersion: string;
   reportFingerprint: string;
   status: TrendReportJobStatus;
   progressPercent: number;

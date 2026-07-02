@@ -74,6 +74,11 @@ public sealed class TrainingRepository : ITrainingRepository
         }
         else
         {
+            if(day.Sessions.Any(candidate => candidate.Id == sessionEntity.Id))
+            {
+                throw new InvalidOperationException(
+                    $"您已经保存过这个训练记录了。日期：{date:yyyy-MM-dd}, 开始时间：{session.StartTime:HH:mm}。");
+            }
             sessionEntity.TrainingDayId = day.Id;
             day.Sessions.Add(sessionEntity);
             day.UpdatedAtUtc = now;
@@ -130,6 +135,7 @@ public sealed class TrainingRepository : ITrainingRepository
         return new TrainingSessionModel(
             entity.Id,
             entity.TrainingDayId,
+            entity.TrainingDay?.Date,
             entity.StartTime,
             entity.DurationMinutes,
             entity.SessionRpe,

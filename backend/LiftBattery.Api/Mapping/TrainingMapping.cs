@@ -32,6 +32,7 @@ public static class TrainingMapping
         return new TrainingSessionModel(
             0,
             0,
+            null,
             startTime,
             dto.DurationMinutes,
             dto.SessionRpe,

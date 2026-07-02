@@ -8,10 +8,14 @@ namespace LiftBattery.Api.Services;
 public sealed class TrainingSessionService : ITrainingSessionService
 {
     private readonly ITrainingRepository _repository;
+    private readonly ITrendReportInvalidationService _trendReportInvalidationService;
 
-    public TrainingSessionService(ITrainingRepository repository)
+    public TrainingSessionService(
+        ITrainingRepository repository,
+        ITrendReportInvalidationService trendReportInvalidationService)
     {
         _repository = repository;
+        _trendReportInvalidationService = trendReportInvalidationService;
     }
 
     public async Task<IReadOnlyList<TrainingDayDto>> GetByDateRangeAsync(
@@ -51,6 +55,10 @@ public sealed class TrainingSessionService : ITrainingSessionService
         ValidateSession(dto);
         var session = TrainingMapping.ToModel(dto, DateTimeOffset.UtcNow);
         var day = await _repository.AddSessionAsync(userId, date, session, cancellationToken);
+        await _trendReportInvalidationService.InvalidateForTrainingDataChangeAsync(
+            userId,
+            date,
+            cancellationToken);
         return TrainingMapping.ToDto(day);
     }
 
@@ -71,6 +79,14 @@ public sealed class TrainingSessionService : ITrainingSessionService
         if (deleted is null)
         {
             return null;
+        }
+
+        if (deleted.Date is DateOnly deletedDate)
+        {
+            await _trendReportInvalidationService.InvalidateForTrainingDataChangeAsync(
+                userId,
+                deletedDate,
+                cancellationToken);
         }
 
         return TrainingMapping.ToDto(deleted);

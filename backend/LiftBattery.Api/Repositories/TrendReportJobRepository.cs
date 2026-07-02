@@ -10,6 +10,7 @@ namespace LiftBattery.Api.Repositories;
 public sealed class TrendReportJobRepository : ITrendReportJobRepository
 {
     private const string PartitionKeyValue = "trend-report";
+    private const string DataVersionPartitionKeyValue = "trend-report-data-version";
     private readonly TableClient _tableClient;
     private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -28,6 +29,49 @@ public sealed class TrendReportJobRepository : ITrendReportJobRepository
         await EnsureTableAsync();
         await _tableClient.AddEntityAsync(ToEntity(job));
         return job;
+    }
+
+    public async Task<string> GetCurrentDataVersionAsync(int userId)
+    {
+        await EnsureTableAsync();
+
+        try
+        {
+            var response = await _tableClient.GetEntityAsync<TrendReportDataVersionEntity>(
+                DataVersionPartitionKeyValue,
+                userId.ToString());
+            return response.Value.DataVersion;
+        }
+        catch (RequestFailedException exception) when (exception.Status == 404)
+        {
+            var now = DateTimeOffset.UtcNow;
+            var initialVersion = CreateDataVersion(now);
+            await _tableClient.UpsertEntityAsync(new TrendReportDataVersionEntity
+            {
+                PartitionKey = DataVersionPartitionKeyValue,
+                RowKey = userId.ToString(),
+                UserId = userId,
+                DataVersion = initialVersion,
+                UpdatedAtUtc = now,
+            });
+            return initialVersion;
+        }
+    }
+
+    public async Task<string> BumpDataVersionAsync(int userId, DateTimeOffset updatedAtUtc)
+    {
+        await EnsureTableAsync();
+
+        var nextVersion = CreateDataVersion(updatedAtUtc);
+        await _tableClient.UpsertEntityAsync(new TrendReportDataVersionEntity
+        {
+            PartitionKey = DataVersionPartitionKeyValue,
+            RowKey = userId.ToString(),
+            UserId = userId,
+            DataVersion = nextVersion,
+            UpdatedAtUtc = updatedAtUtc,
+        }, TableUpdateMode.Replace);
+        return nextVersion;
     }
 
     public async Task<IReadOnlyList<TrendReportJob>> GetActiveByUserIdAsync(int userId)
@@ -81,7 +125,10 @@ public sealed class TrendReportJobRepository : ITrendReportJobRepository
             var processingIsFresh = entity.Status == TrendReportJobStatuses.Processing
                 && entity.UpdatedAtUtc > startedAtUtc.AddMinutes(-10);
 
-            if (entity.Status is TrendReportJobStatuses.Completed or TrendReportJobStatuses.Cancelled or TrendReportJobStatuses.Superseded
+            if (entity.Status is TrendReportJobStatuses.Completed
+                    or TrendReportJobStatuses.Cancelled
+                    or TrendReportJobStatuses.Superseded
+                    or TrendReportJobStatuses.CancelRequested
                 || processingIsFresh)
             {
                 return null;
@@ -124,7 +171,9 @@ public sealed class TrendReportJobRepository : ITrendReportJobRepository
 
         // Protect terminal jobs from being overwritten by stale workers.
         // If an old worker finishes after this job was cancelled or superseded, it must not change the job back to Processing, Completed, or Failed.
-        if (job.Status is not TrendReportJobStatuses.Cancelled and not TrendReportJobStatuses.Superseded)
+        if (job.Status is not TrendReportJobStatuses.Cancelled
+            and not TrendReportJobStatuses.Superseded
+            and not TrendReportJobStatuses.CancelRequested)
         {
             try
             {
@@ -132,7 +181,9 @@ public sealed class TrendReportJobRepository : ITrendReportJobRepository
                     PartitionKeyValue,
                     job.Id.ToString());
 
-                if (current.Value.Status is TrendReportJobStatuses.Cancelled or TrendReportJobStatuses.Superseded)
+                if (current.Value.Status is TrendReportJobStatuses.Cancelled
+                    or TrendReportJobStatuses.Superseded
+                    or TrendReportJobStatuses.CancelRequested)
                 {
                     return ToModel(current.Value);
                 }
@@ -162,6 +213,7 @@ public sealed class TrendReportJobRepository : ITrendReportJobRepository
             UserId = job.UserId,
             ProgressPercent = job.ProgressPercent,
             CurrentStage = job.CurrentStage,
+            DataVersion = job.DataVersion,
             ReportFingerprint = job.ReportFingerprint,
             RequestJson = JsonSerializer.Serialize(job.Request, _jsonOptions),
             SnapshotJson = JsonSerializer.Serialize(job.Snapshot, _jsonOptions),
@@ -193,6 +245,7 @@ public sealed class TrendReportJobRepository : ITrendReportJobRepository
             entity.ProgressPercent,
             entity.CurrentStage,
             request,
+            string.IsNullOrWhiteSpace(entity.DataVersion) ? entity.ReportFingerprint : entity.DataVersion,
             entity.ReportFingerprint,
             snapshot,
             result,
@@ -213,6 +266,7 @@ public sealed class TrendReportJobRepository : ITrendReportJobRepository
         public int UserId { get; set; }
         public int ProgressPercent { get; set; }
         public string CurrentStage { get; set; } = string.Empty;
+        public string DataVersion { get; set; } = string.Empty;
         public string ReportFingerprint { get; set; } = string.Empty;
         public string RequestJson { get; set; } = string.Empty;
         public string SnapshotJson { get; set; } = string.Empty;
@@ -221,6 +275,22 @@ public sealed class TrendReportJobRepository : ITrendReportJobRepository
         public DateTimeOffset CreatedAtUtc { get; set; }
         public DateTimeOffset? StartedAtUtc { get; set; }
         public DateTimeOffset? CompletedAtUtc { get; set; }
+        public DateTimeOffset UpdatedAtUtc { get; set; }
+    }
+
+    private static string CreateDataVersion(DateTimeOffset updatedAtUtc)
+    {
+        return $"{updatedAtUtc:yyyyMMddHHmmssfffffff}-{Guid.NewGuid():N}";
+    }
+
+    private sealed class TrendReportDataVersionEntity : ITableEntity
+    {
+        public string PartitionKey { get; set; } = DataVersionPartitionKeyValue;
+        public string RowKey { get; set; } = string.Empty;
+        public DateTimeOffset? Timestamp { get; set; }
+        public ETag ETag { get; set; }
+        public int UserId { get; set; }
+        public string DataVersion { get; set; } = string.Empty;
         public DateTimeOffset UpdatedAtUtc { get; set; }
     }
 }

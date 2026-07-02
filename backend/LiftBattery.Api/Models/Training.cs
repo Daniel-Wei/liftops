@@ -25,6 +25,7 @@ public sealed record TrainingExerciseModel(
 public sealed record TrainingSessionModel(
     int Id,
     int TrainingDayId,
+    DateOnly? Date,
     TimeOnly StartTime,
     int DurationMinutes,
     decimal SessionRpe,

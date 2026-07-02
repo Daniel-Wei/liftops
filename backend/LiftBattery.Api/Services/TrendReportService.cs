@@ -95,7 +95,8 @@ public sealed class TrendReportService : ITrendReportService
             snapshotStart,
             rangeEnd);
         var snapshot = new TrendReportSnapshot(trainingDays, preCheckLogs);
-        var reportFingerprint = CreateReportFingerprint(validatedRequest, snapshot);
+        var dataVersion = await _jobRepository.GetCurrentDataVersionAsync(userId);
+        var reportFingerprint = CreateReportFingerprint(validatedRequest, snapshot, dataVersion);
         var existingSameVersionJob = await _jobRepository.GetLatestByUserIdAndFingerprintAsync(userId, reportFingerprint);
 
         if (existingSameVersionJob is not null
@@ -138,6 +139,7 @@ public sealed class TrendReportService : ITrendReportService
             0,
             "等待后台处理",
             validatedRequest,
+            dataVersion,
             reportFingerprint,
             // The request stores user selections; the snapshot stores database data at submission time.
             snapshot,
@@ -285,7 +287,7 @@ public sealed class TrendReportService : ITrendReportService
             job.UserId,
             job.Request.StartWeek.ToString("yyyy-MM-dd"),
             job.Request.EndWeek.AddDays(6).ToString("yyyy-MM-dd"),
-            job.ReportFingerprint,
+            job.DataVersion,
             job.CreatedAtUtc);
     }
 
@@ -295,6 +297,21 @@ public sealed class TrendReportService : ITrendReportService
 
         if (latestJob is null)
         {
+            return true;
+        }
+
+        if (latestJob.Status == TrendReportJobStatuses.CancelRequested)
+        {
+            var completedAt = DateTimeOffset.UtcNow;
+            await _jobRepository.UpdateAsync(latestJob with
+            {
+                Status = TrendReportJobStatuses.Superseded,
+                ProgressPercent = Math.Max(latestJob.ProgressPercent, 80),
+                CurrentStage = "已停止：训练数据已更新，请重新生成报告",
+                ErrorMessage = null,
+                CompletedAtUtc = completedAt,
+                UpdatedAtUtc = completedAt,
+            });
             return true;
         }
 
@@ -329,7 +346,7 @@ public sealed class TrendReportService : ITrendReportService
             && queueMessage.UserId == job.UserId
             && queueMessage.PeriodStart == job.Request.StartWeek.ToString("yyyy-MM-dd")
             && queueMessage.PeriodEnd == job.Request.EndWeek.AddDays(6).ToString("yyyy-MM-dd")
-            && string.Equals(queueMessage.DataVersion, job.ReportFingerprint, StringComparison.Ordinal);
+            && string.Equals(queueMessage.DataVersion, job.DataVersion, StringComparison.Ordinal);
     }
 
     private Task DelayForDemoAsync(CancellationToken cancellationToken)
@@ -422,7 +439,10 @@ public sealed class TrendReportService : ITrendReportService
         return new TrendReportRequest(startWeek, endWeek, comparisonStartWeek, comparisonEndWeek, selections, reportTypes);
     }
 
-    private static string CreateReportFingerprint(TrendReportRequest request, TrendReportSnapshot snapshot)
+    private static string CreateReportFingerprint(
+        TrendReportRequest request,
+        TrendReportSnapshot snapshot,
+        string dataVersion)
     {
         var normalizedSelections = request.Selections
             .OrderBy(selection => selection.MuscleGroup, StringComparer.Ordinal)
@@ -436,6 +456,7 @@ public sealed class TrendReportService : ITrendReportService
             request.EndWeek.ToString("yyyy-MM-dd"),
             request.ComparisonStartWeek?.ToString("yyyy-MM-dd") ?? string.Empty,
             request.ComparisonEndWeek?.ToString("yyyy-MM-dd") ?? string.Empty,
+            dataVersion,
             string.Join("|", normalizedSelections),
             string.Join("|", normalizedReportTypes),
             JsonSerializer.Serialize(snapshot, FingerprintJsonOptions));
@@ -925,6 +946,7 @@ public sealed class TrendReportService : ITrendReportService
     {
         return new TrendReportJobDto(
             job.Id,
+            job.DataVersion,
             job.ReportFingerprint,
             job.Status,
             job.ProgressPercent,

@@ -10,6 +10,7 @@ public static class TrendReportJobStatuses
     public const string Failed = "Failed";
     public const string Cancelled = "Cancelled";
     public const string Superseded = "Superseded";
+    public const string CancelRequested = "CancelRequested";
 }
 
 public sealed record TrendReportRequest(
@@ -31,6 +32,7 @@ public sealed record TrendReportJob(
     int ProgressPercent,
     string CurrentStage,
     TrendReportRequest Request,
+    string DataVersion,
     string ReportFingerprint,
     TrendReportSnapshot Snapshot,
     TrendReportResultDto? Result,

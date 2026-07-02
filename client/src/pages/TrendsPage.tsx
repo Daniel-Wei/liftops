@@ -200,6 +200,9 @@ export function TrendsPage() {
     return nextRequest;
   }, [comparisonCycle, selectedCycle, selectedMuscleSelections, selectedReports]);
   const activeJobIsGenerating = job?.status === "Queued" || job?.status === "Processing";
+  const currentReportNeedsRegeneration = job?.status === "Outdated"
+    || job?.status === "Superseded"
+    || job?.status === "CancelRequested";
   const canGenerate = currentReportRequest !== null
     && status !== "submitting";
   const generateButtonText = status === "submitting"
@@ -207,6 +210,8 @@ export function TrendsPage() {
     : activeJobIsGenerating
       ? "重新生成报告"
       : "生成报告";
+
+  const displayGenerateButtonText = currentReportNeedsRegeneration ? "重新生成报告" : generateButtonText;
 
   // execute any remaining job
   useEffect(() => {
@@ -340,7 +345,7 @@ export function TrendsPage() {
             disabled={!canGenerate}
             onClick={handleGenerateReport}
           >
-            {generateButtonText}
+            {displayGenerateButtonText}
           </button>
         </div>
       </section>

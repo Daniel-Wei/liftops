@@ -87,6 +87,14 @@ export function getJobStatusLabel(status: string) {
     return "生成失败";
   }
 
+  if (status === "CancelRequested") {
+    return "正在停止旧报告";
+  }
+
+  if (status === "Outdated") {
+    return "报告已过期";
+  }
+
   if (status === "Superseded") {
     return "已被新版本取代";
   }
